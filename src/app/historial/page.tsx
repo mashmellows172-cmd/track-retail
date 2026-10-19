@@ -28,17 +28,20 @@ export default function HistorialPage() {
 
   useEffect(() => {
     if (vendedor === undefined) return; // still loading localStorage
-    
+
+    if (!vendedor) {
+      setLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+
     const fetchVentas = async () => {
-      if (!vendedor) {
-        setLoading(false);
-        return;
-      }
       setLoading(true);
       setError(null);
       try {
         const url = `/api/ventas?vendedor_id=${encodeURIComponent(vendedor)}&mes=${mesFiltro}`;
-        const res = await fetch(url);
+        const res = await fetch(url, { signal: controller.signal });
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}));
           throw new Error(errData.error || `Error ${res.status}`);
@@ -46,6 +49,7 @@ export default function HistorialPage() {
         const data = await res.json();
         setVentas(Array.isArray(data) ? data : []);
       } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') return;
         setError(err instanceof Error ? err.message : 'Error cargando datos');
         setVentas([]);
       } finally {
@@ -54,6 +58,7 @@ export default function HistorialPage() {
     };
 
     fetchVentas();
+    return () => controller.abort();
   }, [mesFiltro, vendedor]);
 
   return (

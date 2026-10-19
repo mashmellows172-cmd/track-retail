@@ -35,18 +35,43 @@ export async function POST(req: NextRequest) {
     const base64Image = Buffer.from(arrayBuffer).toString('base64');
     const mimeType = (file.type && file.type !== 'application/octet-stream') ? file.type : 'image/jpeg';
 
-    const model = genAI.getGenerativeModel({
-      model: 'gemini-flash-latest',
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 1024,
-      }
-    });
+    const modelNames = ['gemini-3.8-flash', 'gemini-flash-latest'];
+    let result = null;
+    let lastError = null;
 
-    const result = await model.generateContent([
-      SYSTEM_PROMPT,
-      { inlineData: { data: base64Image, mimeType } },
-    ]);
+    for (const modelName of modelNames) {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 1024,
+        }
+      });
+
+      // Reintento con backoff para absorber picos temporales 503 de Gemini
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          result = await model.generateContent([
+            SYSTEM_PROMPT,
+            { inlineData: { data: base64Image, mimeType } },
+          ]);
+          break;
+        } catch (err: unknown) {
+          lastError = err;
+          const msg = err instanceof Error ? err.message : '';
+          if (msg.includes('503') || msg.includes('high demand')) {
+            await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+            continue;
+          }
+          break;
+        }
+      }
+      if (result) break;
+    }
+
+    if (!result) {
+      throw lastError || new Error('No se pudo obtener respuesta del modelo');
+    }
 
     const text = result.response.text().trim();
 
