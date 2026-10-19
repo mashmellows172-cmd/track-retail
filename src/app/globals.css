@@ -1,0 +1,83 @@
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700&display=swap');
+
+@import "tailwindcss";
+@config "../../tailwind.config.ts";
+
+@layer base {
+  :root {
+    /* Light Mode (Sleek Minimal) */
+    --color-background: #FAFAFA;
+    --color-surface-base: #FFFFFF;
+    --color-surface-elevated: #FFFFFF;
+    --color-surface-border: #E5E5E5;
+    --color-on-surface: #111827;
+    --color-on-surface-variant: #6B7280;
+    
+    --color-primary: #0F172A;
+    --color-on-primary: #FFFFFF;
+    --color-primary-container: #F1F5F9;
+    --color-on-primary-container: #0F172A;
+    
+    --color-secondary: #D97757;
+    --color-on-secondary: #FFFFFF;
+    --color-secondary-container: #FDE8E1;
+    --color-on-secondary-container: #9B3D20;
+    
+    --color-tertiary: #10B981;
+    --color-error: #EF4444;
+  }
+  
+  .dark {
+    /* Dark Mode (Anthropic/Notion style) */
+    --color-background: #0F0F0F;
+    --color-surface-base: #141414;
+    --color-surface-elevated: #1B1B1B;
+    --color-surface-border: #2A2A2A;
+    --color-on-surface: #EDEDED;
+    --color-on-surface-variant: #A0A0A0;
+    
+    --color-primary: #FFFFFF;
+    --color-on-primary: #000000;
+    --color-primary-container: #262626;
+    --color-on-primary-container: #FFFFFF;
+    
+    --color-secondary: #D97757;
+    --color-on-secondary: #FFFFFF;
+    --color-secondary-container: #4A2214;
+    --color-on-secondary-container: #FFD4C4;
+    
+    --color-tertiary: #10B981;
+    --color-error: #EF4444;
+  }
+}
+
+/* Base Styles */
+body {
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Surface Cards (Replacing Glassmorphism) */
+.glass-card, .glass-panel {
+  background-color: var(--color-surface-elevated);
+  border: 1px solid var(--color-surface-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  border-radius: 0.75rem;
+}
+
+.dark .glass-card, .dark .glass-panel {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+/* Removiendo glow de neon */
+.neon-glow-primary, .neon-glow-secondary {
+  filter: none;
+}
+
+/* Hide scrollbar for clean UI */
+::-webkit-scrollbar {
+    display: none;
+}

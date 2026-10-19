@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TrackRetail - Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Outfit:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container": "#1d2027",
+                      "tertiary-fixed": "#ffdcc6",
+                      "on-tertiary-fixed-variant": "#723600",
+                      "background": "#10131a",
+                      "on-tertiary-fixed": "#311400",
+                      "surface-dim": "#10131a",
+                      "outline-variant": "#424754",
+                      "surface-container-high": "#272a31",
+                      "on-secondary": "#003824",
+                      "surface-tint": "#adc6ff",
+                      "inverse-surface": "#e1e2ec",
+                      "on-secondary-fixed-variant": "#005236",
+                      "on-surface": "#e1e2ec",
+                      "secondary-fixed": "#6ffbbe",
+                      "surface-container-lowest": "#0b0e15",
+                      "tertiary-fixed-dim": "#ffb786",
+                      "error-container": "#93000a",
+                      "on-primary-container": "#00285d",
+                      "primary-fixed": "#d8e2ff",
+                      "inverse-primary": "#005ac2",
+                      "on-primary": "#002e6a",
+                      "on-background": "#e1e2ec",
+                      "primary-fixed-dim": "#adc6ff",
+                      "surface-bright": "#363941",
+                      "secondary": "#4edea3",
+                      "tertiary-container": "#df7412",
+                      "on-secondary-container": "#00311f",
+                      "surface-container-low": "#191b23",
+                      "error": "#ffb4ab",
+                      "tertiary": "#ffb786",
+                      "surface": "#10131a",
+                      "on-error": "#690005",
+                      "inverse-on-surface": "#2e3038",
+                      "secondary-container": "#00a572",
+                      "on-error-container": "#ffdad6",
+                      "surface-container-highest": "#32353c",
+                      "primary-container": "#4d8eff",
+                      "on-tertiary": "#502400",
+                      "surface-variant": "#32353c",
+                      "secondary-fixed-dim": "#4edea3",
+                      "on-tertiary-container": "#461f00",
+                      "on-primary-fixed": "#001a42",
+                      "on-primary-fixed-variant": "#004395",
+                      "on-surface-variant": "#c2c6d6",
+                      "primary": "#adc6ff",
+                      "on-secondary-fixed": "#002113",
+                      "outline": "#8c909f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter": "24px",
+                      "margin-mobile": "16px",
+                      "margin-desktop": "40px",
+                      "stack-sm": "8px",
+                      "stack-md": "16px",
+                      "container-max": "1280px",
+                      "stack-lg": "32px"
+              },
+              "fontFamily": {
+                      "body-lg": ["Inter"],
+                      "label-sm": ["Inter"],
+                      "headline-md": ["Outfit"],
+                      "display-lg": ["Outfit"],
+                      "display-lg-mobile": ["Outfit"],
+                      "headline-sm": ["Outfit"],
+                      "body-md": ["Inter"],
+                      "label-md": ["Inter"]
+              },
+              "fontSize": {
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "600"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "display-lg-mobile": ["36px", {"lineHeight": "44px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background-image: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0) 100%);
+        }
+        
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .neon-glow-primary {
+            filter: drop-shadow(0 0 15px rgba(173, 198, 255, 0.4));
+        }
+        
+        .neon-glow-secondary {
+            filter: drop-shadow(0 0 15px rgba(78, 222, 163, 0.4));
+        }
+        
+        /* Hide scrollbar for clean UI */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md overflow-x-hidden min-h-screen relative">
+<!-- Background Shader -->
+<!-- STITCH_SHADER_START:ANIMATION_3 class="fixed inset-0 w-full h-full -z-10" -->
+<div class="fixed inset-0 w-full h-full -z-10" style="display:block;">
+<canvas id="shader-canvas-ANIMATION_3" style="display:block;width:100%;height:100%"></canvas>
+<script>
+(function() {
+  const canvas = document.getElementById('shader-canvas-ANIMATION_3');
+
+  // Sync the WebGL drawing-buffer size with the CSS-driven layout size.
+  // This fires on initial layout and whenever the element is resized.
+  function syncSize() {
+    const w = canvas.clientWidth  || 1280;
+    const h = canvas.clientHeight || 720;
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width  = w;
+      canvas.height = h;
+    }
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(syncSize).observe(canvas);
+  }
+  syncSize();
+
+  const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+  if (!gl) return;
+  const vs = `attribute vec2 a_position;
+varying vec2 v_texCoord;
+void main() {
+  v_texCoord = a_position * 0.5 + 0.5;
+  gl_Position = vec4(a_position, 0.0, 1.0);
+}`;
+  const fs = `precision highp float;
+varying vec2 v_texCoord;
+uniform float u_time;
+uniform vec2 u_resolution;
+
+void main() {
+    vec2 uv = v_texCoord;
+    
+    // Create a smooth mesh gradient background
+    // Base colors: Deep indigo and violet
+    vec3 color1 = vec3(0.06, 0.07, 0.1);  // Dark Navy
+    vec3 color2 = vec3(0.12, 0.08, 0.2);  // Deep Violet
+    vec3 color3 = vec3(0.05, 0.1, 0.15);  // Deep Indigo
+    
+    // Animated movement for the mesh effect
+    float noise1 = sin(uv.x * 2.0 + u_time * 0.2) * 0.5 + 0.5;
+    float noise2 = cos(uv.y * 3.0 - u_time * 0.3) * 0.5 + 0.5;
+    float noise3 = sin((uv.x + uv.y) * 1.5 + u_time * 0.1) * 0.5 + 0.5;
+    
+    vec3 finalColor = mix(color1, color2, noise1);
+    finalColor = mix(finalColor, color3, noise2 * 0.5);
+    
+    // Add a very subtle glow highlight
+    float glow = smoothstep(0.8, 0.2, distance(uv, vec2(0.5 + 0.2 * sin(u_time * 0.1), 0.5 + 0.2 * cos(u_time * 0.15))));
+    finalColor += vec3(0.05, 0.02, 0.1) * glow;
+    
+    gl_FragColor = vec4(finalColor, 1.0);
+}`;
+  function cs(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    return s;
+  }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, cs(gl.VERTEX_SHADER, vs));
+  gl.attachShader(prog, cs(gl.FRAGMENT_SHADER, fs));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const pos = gl.getAttribLocation(prog, 'a_position');
+  gl.enableVertexAttribArray(pos);
+  gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+  const uTime = gl.getUniformLocation(prog, 'u_time');
+  const uRes = gl.getUniformLocation(prog, 'u_resolution');
+  const uMouse = gl.getUniformLocation(prog, 'u_mouse');
+
+  // u_mouse is in pixel coordinates matching u_resolution (ShaderToy convention).
+  // Shaders that need normalized coords should use: u_mouse / u_resolution.
+  let mouse = { x: canvas.width / 2, y: canvas.height / 2 };
+  window.addEventListener('mousemove', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width && rect.height) {
+      const nx = (event.clientX - rect.left) / rect.width;
+      const ny = 1.0 - (event.clientY - rect.top) / rect.height;
+      mouse.x = nx * canvas.width;
+      mouse.y = ny * canvas.height;
+    }
+  });
+
+  function render(t) {
+    if (typeof ResizeObserver === 'undefined') syncSize();
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    if (uTime) gl.uniform1f(uTime, t * 0.001);
+    if (uRes) gl.uniform2f(uRes, canvas.width, canvas.height);
+    if (uMouse) gl.uniform2f(uMouse, mouse.x, mouse.y);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    requestAnimationFrame(render);
+  }
+  render(0);
+})();
+</script>
+</div>
+<!-- STITCH_SHADER_END:ANIMATION_3 -->
+<!-- Dark Gradient Overlay for readability -->
+<div class="fixed inset-0 bg-background/80 -z-10 pointer-events-none"></div>
+<div class="flex min-h-screen">
+<!-- Desktop SideNavBar (Hidden on Mobile) -->
+<aside class="hidden md:flex flex-col fixed left-4 top-4 bottom-4 w-64 rounded-xl border border-white/10 shadow-2xl bg-white/5 backdrop-blur-lg py-stack-lg z-50">
+<!-- Header -->
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-background" style="font-variation-settings: 'FILL' 1;">insights</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">TrackRetail</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant/70">Sales Intelligence</p>
+</div>
+</div>
+<!-- Primary Action -->
+<div class="px-6 mb-8">
+<button class="w-full bg-gradient-to-r from-primary-container to-inverse-primary text-on-primary-container font-label-md text-label-md py-3 rounded-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-[0_0_15px_rgba(77,142,255,0.3)]">
+<span class="material-symbols-outlined text-[20px]">add</span>
+                    New Entry
+                </button>
+</div>
+<!-- Navigation Links -->
+<nav class="flex-1 flex flex-col gap-2 px-2">
+<!-- Dashboard (Active) -->
+<a class="flex items-center gap-3 px-4 py-3 bg-white/15 text-secondary drop-shadow-[0_0_15px_rgba(78,222,163,0.4)] rounded-lg mx-2 transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant/70 hover:text-on-surface hover:bg-white/10 mx-2 rounded-lg hover:translate-x-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span class="font-label-md text-label-md">Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant/70 hover:text-on-surface hover:bg-white/10 mx-2 rounded-lg hover:translate-x-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-label-md text-label-md">Sales Log</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant/70 hover:text-on-surface hover:bg-white/10 mx-2 rounded-lg hover:translate-x-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-md text-label-md">Team</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant/70 hover:text-on-surface hover:bg-white/10 mx-2 rounded-lg hover:translate-x-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-md text-label-md">Commission</span>
+</a>
+</nav>
+<!-- Footer Links -->
+<div class="mt-auto px-2 flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant/70 hover:text-on-surface hover:bg-white/10 mx-2 rounded-lg hover:translate-x-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-md text-label-md">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant/70 hover:text-error hover:bg-error-container/20 mx-2 rounded-lg hover:translate-x-1 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-label-md text-label-md">Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 w-full md:ml-[280px] p-margin-mobile md:p-margin-desktop min-h-screen flex flex-col gap-stack-lg">
+<!-- Top Header (Canvas Context) -->
+<header class="flex justify-between items-end pb-stack-sm border-b border-white/5">
+<div>
+<h2 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface">Overview</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-2">Welcome back. Your sales are tracking 12% ahead of last month.</p>
+</div>
+<!-- Profile / Quick Actions -->
+<div class="hidden sm:flex items-center gap-4">
+<button class="w-10 h-10 rounded-full glass-card flex items-center justify-center hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<div class="h-10 w-10 rounded-full bg-surface-variant overflow-hidden border border-white/10 p-0.5">
+<img class="w-full h-full rounded-full object-cover" data-alt="A macro photography style extreme close-up of a high-tech glowing blue optic lens, hyper-detailed, neon reflections, dark background, cyberpunk aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbtr9t_gB7JDtd7W4fqmHCCIYkhUM_xUK5PhTC0yMtox0jX240Hvb5l-Cq8Pf3OFknPHva1-AFdIdm8IV29LVmfUfvXWS29_Wj0dYa8JX8--THO8qxQdautiLPYVquZ04xt0JbUhP3r8GysPo-kSqItu8PJ2x4iwTDskBQ7gpzUEvviCXUXIXf32qTCRzVv4m7rt0ExIHennNbxzFysegm_5iGSw1d20AM01cJriiKOrQOhKry6fLoSNDNGxJBWsR6LmlcSolyDVU"/>
+</div>
+</div>
+</header>
+<!-- Bento Grid Layout for Dashboard Metrics -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-stack-md">
+<!-- Card 1: Total Sales -->
+<div class="glass-card rounded-xl p-6 group hover:scale-[1.02] hover:bg-white/10 transition-all duration-300 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10 transition-all group-hover:bg-primary/20"></div>
+<div class="flex justify-between items-start mb-8 relative z-10">
+<div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
+<span class="material-symbols-outlined">receipt_long</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary bg-secondary/10 px-2 py-1 rounded-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> 8.2%
+                        </span>
+</div>
+<div class="relative z-10">
+<h3 class="font-label-md text-label-md text-on-surface-variant mb-1">Total Sales (MTD)</h3>
+<p class="font-headline-md text-headline-md text-on-surface">$124,500</p>
+</div>
+</div>
+<!-- Card 2: Scanned Tickets -->
+<div class="glass-card rounded-xl p-6 group hover:scale-[1.02] hover:bg-white/10 transition-all duration-300 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-tertiary/10 rounded-full blur-2xl -mr-10 -mt-10 transition-all group-hover:bg-tertiary/20"></div>
+<div class="flex justify-between items-start mb-8 relative z-10">
+<div class="w-10 h-10 rounded-lg bg-tertiary/10 text-tertiary flex items-center justify-center border border-tertiary/20">
+<span class="material-symbols-outlined">qr_code_scanner</span>
+</div>
+<span class="font-label-sm text-label-sm text-secondary bg-secondary/10 px-2 py-1 rounded-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> 3.1%
+                        </span>
+</div>
+<div class="relative z-10">
+<h3 class="font-label-md text-label-md text-on-surface-variant mb-1">Scanned Tickets</h3>
+<p class="font-headline-md text-headline-md text-on-surface">1,284</p>
+</div>
+</div>
+<!-- Featured Card: Projected Bonus (Spans 2 cols) -->
+<div class="glass-card rounded-xl p-6 md:col-span-2 group hover:scale-[1.01] hover:bg-white/10 transition-all duration-300 relative overflow-hidden bg-gradient-to-br from-secondary/20 to-surface-container/40 border-secondary/30 drop-shadow-[0_0_20px_rgba(78,222,163,0.15)]">
+<div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-secondary/10 via-transparent to-transparent pointer-events-none"></div>
+<div class="flex flex-col h-full justify-between relative z-10">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<div class="w-10 h-10 rounded-lg bg-secondary/20 text-secondary flex items-center justify-center border border-secondary/30 neon-glow-secondary">
+<span class="material-symbols-outlined">redeem</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Projected Bonus</h3>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+<div class="mt-auto">
+<div class="flex items-end gap-4 mb-2">
+<p class="font-display-lg text-display-lg text-secondary drop-shadow-[0_0_10px_rgba(78,222,163,0.5)] tracking-tight">$8,450.00</p>
+<p class="font-body-md text-body-md text-on-surface-variant mb-2">estimated</p>
+</div>
+<!-- Progress Bar -->
+<div class="w-full bg-black/40 rounded-full h-1.5 mt-4 border border-white/5 overflow-hidden">
+<div class="bg-gradient-to-r from-secondary-container to-secondary h-1.5 rounded-full w-[75%] shadow-[0_0_10px_rgba(78,222,163,0.8)] relative">
+<div class="absolute right-0 top-0 bottom-0 w-4 bg-white/40 blur-[2px]"></div>
+</div>
+</div>
+<div class="flex justify-between mt-2 font-label-sm text-label-sm text-on-surface-variant">
+<span>$0</span>
+<span>Target: $10,000</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Activity Section -->
+<section class="flex flex-col gap-stack-md mt-4">
+<div class="flex justify-between items-center">
+<h3 class="font-headline-md text-headline-md text-on-surface">Recent Activity</h3>
+<button class="font-label-md text-label-md text-primary hover:text-primary-fixed transition-colors">View Full Log</button>
+</div>
+<div class="glass-panel rounded-xl overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-white/5 bg-black/20">
+<th class="font-label-sm text-label-sm text-on-surface-variant p-4 font-semibold uppercase tracking-wider">Transaction ID</th>
+<th class="font-label-sm text-label-sm text-on-surface-variant p-4 font-semibold uppercase tracking-wider">Date &amp; Time</th>
+<th class="font-label-sm text-label-sm text-on-surface-variant p-4 font-semibold uppercase tracking-wider">Amount</th>
+<th class="font-label-sm text-label-sm text-on-surface-variant p-4 font-semibold uppercase tracking-wider">Status</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-white/5 font-body-md text-body-md">
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="p-4 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-variant flex items-center justify-center text-on-surface-variant group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[16px]">receipt</span>
+</div>
+<span class="text-on-surface font-medium">TRX-9982-A</span>
+</td>
+<td class="p-4 text-on-surface-variant">Oct 24, 14:32 PM</td>
+<td class="p-4 text-on-surface font-medium">$450.00</td>
+<td class="p-4">
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm px-2.5 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/20 shadow-[0_0_8px_rgba(78,222,163,0.2)]">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Processed
+                                        </span>
+</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="p-4 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-variant flex items-center justify-center text-on-surface-variant group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[16px]">receipt</span>
+</div>
+<span class="text-on-surface font-medium">TRX-9981-C</span>
+</td>
+<td class="p-4 text-on-surface-variant">Oct 24, 11:15 AM</td>
+<td class="p-4 text-on-surface font-medium">$1,200.50</td>
+<td class="p-4">
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm px-2.5 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/20 shadow-[0_0_8px_rgba(78,222,163,0.2)]">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span> Processed
+                                        </span>
+</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="p-4 flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-variant flex items-center justify-center text-on-surface-variant group-hover:bg-tertiary/20 group-hover:text-tertiary transition-colors">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+</div>
+<span class="text-on-surface font-medium">TRX-9980-B</span>
+</td>
+<td class="p-4 text-on-surface-variant">Oct 23, 16:45 PM</td>
+<td class="p-4 text-on-surface font-medium">$85.00</td>
+<td class="p-4">
+<span class="inline-flex items-center gap-1 font-label-sm text-label-sm px-2.5 py-1 rounded-full bg-tertiary/10 text-tertiary border border-tertiary/20">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span> Pending
+                                        </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</section>
+</main>
+</div>
+<!-- Mobile Bottom Navigation (Hidden on Desktop) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 glass-panel border-t border-white/10 z-50 pb-safe pt-2 px-4 flex justify-around items-center">
+<a class="flex flex-col items-center gap-1 p-2 text-secondary" href="#">
+<span class="material-symbols-outlined drop-shadow-[0_0_8px_rgba(78,222,163,0.6)]" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-label-sm text-[10px]">Dashboard</span>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 text-on-surface-variant hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined">insights</span>
+<span class="font-label-sm text-[10px]">Analytics</span>
+</a>
+<div class="relative -top-5">
+<button class="w-12 h-12 rounded-full bg-gradient-to-tr from-primary to-primary-container text-on-primary-container flex items-center justify-center shadow-[0_0_15px_rgba(77,142,255,0.4)] border-2 border-surface-container">
+<span class="material-symbols-outlined">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center gap-1 p-2 text-on-surface-variant hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="font-label-sm text-[10px]">Log</span>
+</a>
+<a class="flex flex-col items-center gap-1 p-2 text-on-surface-variant hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="font-label-sm text-[10px]">Commission</span>
+</a>
+</nav>
+<div class="md:hidden h-20 w-full"></div> <!-- Mobile padding for fixed nav -->
+</body></html>

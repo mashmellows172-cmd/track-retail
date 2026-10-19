@@ -1,0 +1,17 @@
+{
+  "name": "TrackRetail — Sales Intelligence",
+  "short_name": "TrackRetail",
+  "description": "Gestor de ventas y comisiones de garantías para retail",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#10131a",
+  "theme_color": "#10131a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}
