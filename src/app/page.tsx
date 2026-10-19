@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import DashboardCards from '@/components/DashboardCards';
 import GraficoMensual from '@/components/GraficoMensual';
 import GraficoDistribucion from '@/components/GraficoDistribucion';
@@ -26,6 +26,28 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const fetchVentas = useCallback(async (signal: AbortSignal) => {
+    if (!vendedor) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const url = `/api/ventas?vendedor_id=${encodeURIComponent(vendedor)}&mes=${currentMonth}`;
+      const res = await fetch(url, { signal });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Error ${res.status}`);
+      }
+      const data = await res.json();
+      setVentas(Array.isArray(data) ? data : []);
+    } catch (err: unknown) {
+      // AbortError es esperado al navegar — no es un error real
+      if (err instanceof Error && err.name === 'AbortError') return;
+      setError(err instanceof Error ? err.message : 'Error desconocido');
+    } finally {
+      setLoading(false);
+    }
+  }, [vendedor, currentMonth]);
+
   useEffect(() => {
     if (vendedor === undefined) return; // Still initializing
 
@@ -34,29 +56,20 @@ export default function DashboardPage() {
       return;
     }
 
-    const fetchVentas = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const url = `/api/ventas?vendedor_id=${encodeURIComponent(vendedor)}&mes=${currentMonth}`;
-        const res = await fetch(url);
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || `Error ${res.status}`);
-        }
-        const data = await res.json();
-        setVentas(Array.isArray(data) ? data : []);
-      } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'Error desconocido');
-      } finally {
-        setLoading(false);
-      }
-    };
+    const controller = new AbortController();
+    fetchVentas(controller.signal);
 
-    fetchVentas();
-    const interval = setInterval(fetchVentas, 30000); // Poll every 30s
-    return () => clearInterval(interval);
-  }, [currentMonth, vendedor]);
+    // Polling cada 30s con cleanup apropiado
+    const interval = setInterval(() => {
+      fetchVentas(controller.signal);
+    }, 30000);
+
+    return () => {
+      controller.abort(); // Cancela el fetch en vuelo al desmontar
+      clearInterval(interval);
+    };
+  }, [vendedor, fetchVentas]);
+
 
   // Still loading localStorage
   if (vendedor === undefined) {

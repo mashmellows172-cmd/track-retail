@@ -7,6 +7,7 @@ export interface VentaOCR {
   total_boleta: number | null;
   canal: 'caja' | 'internet' | null;
   numero_pedido: string | null;
+  anos_garantia?: number | null;
 }
 
 export interface Venta extends VentaOCR {

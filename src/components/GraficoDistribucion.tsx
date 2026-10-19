@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Venta } from '@/types/venta';
 
 interface GraficoDistribucionProps {
@@ -7,17 +8,20 @@ interface GraficoDistribucionProps {
 }
 
 export default function GraficoDistribucion({ ventas }: GraficoDistribucionProps) {
-  let telefonia = 0;
-  let lineasDuras = 0;
+  const { telefonia, lineasDuras, total, telefoniaPct, lineasDurasPct } = useMemo(() => {
+    let telefonia = 0;
+    let lineasDuras = 0;
 
-  ventas.forEach(v => {
-    if (v.tipo_garantia === 'telefonia') telefonia += v.comision_calculada || 0;
-    else if (v.tipo_garantia === 'lineas_duras') lineasDuras += v.comision_calculada || 0;
-  });
+    ventas.forEach(v => {
+      if (v.tipo_garantia === 'telefonia') telefonia += v.comision_calculada || 0;
+      else if (v.tipo_garantia === 'lineas_duras') lineasDuras += v.comision_calculada || 0;
+    });
 
-  const total = telefonia + lineasDuras;
-  const telefoniaPct = total > 0 ? Math.round((telefonia / total) * 100) : 0;
-  const lineasDurasPct = total > 0 ? 100 - telefoniaPct : 0;
+    const total = telefonia + lineasDuras;
+    const telefoniaPct = total > 0 ? Math.round((telefonia / total) * 100) : 0;
+    const lineasDurasPct = total > 0 ? 100 - telefoniaPct : 0;
+    return { telefonia, lineasDuras, total, telefoniaPct, lineasDurasPct };
+  }, [ventas]);
 
   return (
     <div className="glass-panel rounded-xl p-4 flex flex-col justify-center">

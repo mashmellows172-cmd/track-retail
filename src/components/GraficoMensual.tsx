@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { Venta } from '@/types/venta';
 
 interface GraficoMensualProps {
@@ -7,25 +8,28 @@ interface GraficoMensualProps {
 }
 
 export default function GraficoMensual({ ventas }: GraficoMensualProps) {
-  const ventasPorDia: Record<string, number> = {};
+  const { dias, ventasPorDia, maxVenta } = useMemo(() => {
+    const ventasPorDia: Record<string, number> = {};
+    const dias: { full: string; display: string }[] = [];
 
-  const dias: { full: string; display: string }[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0];
-    const displayStr = d.getDate() + '/' + (d.getMonth() + 1);
-    dias.push({ full: dateStr, display: displayStr });
-    ventasPorDia[dateStr] = 0;
-  }
-
-  ventas.forEach(v => {
-    if (v.fecha_compra && ventasPorDia[v.fecha_compra] !== undefined) {
-      ventasPorDia[v.fecha_compra] += (v.comision_calculada || 0);
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const displayStr = d.getDate() + '/' + (d.getMonth() + 1);
+      dias.push({ full: dateStr, display: displayStr });
+      ventasPorDia[dateStr] = 0;
     }
-  });
 
-  const maxVenta = Math.max(...Object.values(ventasPorDia), 1000);
+    ventas.forEach(v => {
+      if (v.fecha_compra && ventasPorDia[v.fecha_compra] !== undefined) {
+        ventasPorDia[v.fecha_compra] += (v.comision_calculada || 0);
+      }
+    });
+
+    const maxVenta = Math.max(...Object.values(ventasPorDia), 1000);
+    return { dias, ventasPorDia, maxVenta };
+  }, [ventas]);
 
   return (
     <div className="h-full flex flex-col">

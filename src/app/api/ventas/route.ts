@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { Venta } from '@/types/venta';
 
+// Solo columnas necesarias — evita traer datos extras de Supabase
+const VENTAS_SELECT = 'id,folio,fecha_compra,canal,valor_garantia,comision_calculada,tipo_garantia,anos_garantia,precio_producto,total_boleta,numero_pedido,vendedor_id';
+
 export async function POST(req: NextRequest) {
   try {
     const data = (await req.json()) as Venta;
@@ -25,7 +28,7 @@ export async function POST(req: NextRequest) {
         numero_pedido: data.numero_pedido ?? null,
         vendedor_id: data.vendedor_id,
       }])
-      .select()
+      .select(VENTAS_SELECT)
       .single();
 
     if (error) {
@@ -56,7 +59,7 @@ export async function GET(req: NextRequest) {
 
     let query = supabase
       .from('ventas')
-      .select('*')
+      .select(VENTAS_SELECT)
       .eq('vendedor_id', vendedor_id)
       .order('fecha_compra', { ascending: false });
 
@@ -74,10 +77,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(data ?? []);
+    // Cache corto: 15s en el navegador, 30s en CDN — datos casi en tiempo real
+    return NextResponse.json(data ?? [], {
+      headers: {
+        'Cache-Control': 's-maxage=30, stale-while-revalidate=60',
+      },
+    });
 
   } catch (error: unknown) {
     console.error('Error en GET /api/ventas:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
+

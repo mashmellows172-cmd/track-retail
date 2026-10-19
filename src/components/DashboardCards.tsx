@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Venta } from '@/types/venta';
 import { getMetaMensual, setMetaMensual } from '@/lib/meta';
 
@@ -25,22 +25,33 @@ export default function DashboardCards({ ventas }: DashboardCardsProps) {
     setIsEditingMeta(false);
   };
 
-  const totalComisiones = ventas.reduce((acc, v) => acc + (v.comision_calculada || 0), 0);
-  const garantiasVendidas = ventas.length;
+  // Memoizar todos los cálculos — solo recalcula cuando cambia el array de ventas
+  const stats = useMemo(() => {
+    const totalComisiones = ventas.reduce((acc, v) => acc + (v.comision_calculada || 0), 0);
+    const garantiasVendidas = ventas.length;
+    const internetSales = ventas.filter(v => v.canal === 'internet').length;
+    const internetPercent = garantiasVendidas > 0 ? Math.round((internetSales / garantiasVendidas) * 100) : 0;
+    const promedioComision = garantiasVendidas > 0 ? Math.round(totalComisiones / garantiasVendidas) : 0;
 
-  const progresoMeta = Math.min(100, Math.round((totalComisiones / metaMensual) * 100));
-  const faltaParaMeta = Math.max(0, metaMensual - totalComisiones);
-  const internetSales = ventas.filter(v => v.canal === 'internet').length;
-  // Blindaje matemático contra división por cero
-  const internetPercent = garantiasVendidas > 0 ? Math.round((internetSales / garantiasVendidas) * 100) : 0;
-  const promedioComision = garantiasVendidas > 0 ? Math.round(totalComisiones / garantiasVendidas) : 0;
+    const today = new Date();
+    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    const currentDay = today.getDate();
+    const remainingDays = daysInMonth - currentDay + 1;
 
-  // Lógica de Meta Diaria
-  const today = new Date();
-  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-  const currentDay = today.getDate();
-  const remainingDays = daysInMonth - currentDay + 1;
-  const metaDiaria = remainingDays > 0 ? Math.ceil(faltaParaMeta / remainingDays) : faltaParaMeta;
+    return { totalComisiones, garantiasVendidas, internetSales, internetPercent, promedioComision, remainingDays };
+  }, [ventas]);
+
+  // Memoizar métricas dependientes de meta — recalcula cuando cambia meta o ventas
+  const metaStats = useMemo(() => {
+    const progresoMeta = Math.min(100, Math.round((stats.totalComisiones / metaMensual) * 100));
+    const faltaParaMeta = Math.max(0, metaMensual - stats.totalComisiones);
+    const metaDiaria = stats.remainingDays > 0 ? Math.ceil(faltaParaMeta / stats.remainingDays) : faltaParaMeta;
+    return { progresoMeta, faltaParaMeta, metaDiaria };
+  }, [stats, metaMensual]);
+
+  const { totalComisiones, garantiasVendidas, internetSales, internetPercent, promedioComision } = stats;
+  const { progresoMeta, faltaParaMeta, metaDiaria } = metaStats;
+
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">

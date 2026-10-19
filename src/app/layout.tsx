@@ -53,10 +53,23 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
+        {/* Preconnect para reducir latencia de DNS/TLS con Google Fonts */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Media=print + onload=swap: carga no bloqueante — no retrasa el First Contentful Paint */}
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          media="print"
+          // @ts-expect-error — onLoad no tipado en Next.js pero es válido en el DOM
+          onLoad="this.media='all'"
         />
+        <noscript>
+          <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+          />
+        </noscript>
       </head>
       <body className={bodyClass}>
         <ErrorBoundary>

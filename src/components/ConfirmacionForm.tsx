@@ -89,7 +89,7 @@ export default function ConfirmacionForm({ initialData, onConfirm, onCancel }: C
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     const numFields = ['precio_producto', 'cantidad_unidades', 'valor_garantia', 'total_boleta', 'anos_garantia'];
-    setFormData(prev => ({
+    setFormData((prev: typeof formData) => ({
       ...prev,
       [name]: numFields.includes(name) ? Number(value) : value,
     }));

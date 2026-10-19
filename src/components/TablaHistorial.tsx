@@ -1,14 +1,15 @@
 'use client';
 
 import { Venta } from '@/types/venta';
-import * as XLSX from 'xlsx';
 
 interface TablaHistorialProps {
   ventas: Venta[];
 }
 
 export default function TablaHistorial({ ventas }: TablaHistorialProps) {
-  const exportarExcel = () => {
+  const exportarExcel = async () => {
+    // Dynamic import: solo carga ~500KB de XLSX cuando el usuario lo necesita
+    const XLSX = await import('xlsx');
     const datosExportar = ventas.map(v => ({
       'Fecha': v.fecha_compra,
       'Folio': v.folio,
@@ -26,6 +27,7 @@ export default function TablaHistorial({ ventas }: TablaHistorialProps) {
     XLSX.utils.book_append_sheet(wb, ws, 'Ventas');
     XLSX.writeFile(wb, 'Comisiones_BryanApp_' + new Date().toISOString().split('T')[0] + '.xlsx');
   };
+
 
   return (
     <div className="glass-panel rounded-2xl overflow-hidden">
