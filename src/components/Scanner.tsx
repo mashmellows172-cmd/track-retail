@@ -22,6 +22,7 @@ export default function Scanner({ onScanSuccess, onManualEntry }: ScannerProps) 
   const [previewFailed, setPreviewFailed] = useState(false);
   const cameraInput = useRef<HTMLInputElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const previewDialog = useRef<HTMLDialogElement>(null);
   const previewUrl = useRef<string | null>(null);
   const request = useRef<AbortController | null>(null);
   const generation = useRef(0);
@@ -133,10 +134,24 @@ export default function Scanner({ onScanSuccess, onManualEntry }: ScannerProps) 
       {selection && (
         <div className="rounded-2xl border border-surface-border bg-surface-base p-4 mb-4">
           {selection.preview && !previewFailed ? (
-            <div className="max-h-80 overflow-auto rounded-xl bg-white mb-3">
-              {/* A local object URL preserves full receipt detail and supports scrolling. */}
+            <div className="mb-3">
+              {/* Keep the entire local photo visible without cropping or nested scrolling. */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img key={selection.preview} src={selection.preview} onError={() => { if (previewUrl.current === selection.preview) setPreviewFailed(true); }} alt="Vista previa de la boleta seleccionada" className="w-full h-auto" />
+              <img key={selection.preview} src={selection.preview} onError={() => { if (previewUrl.current === selection.preview) setPreviewFailed(true); }} alt="Vista previa completa de la boleta seleccionada" className="w-full h-auto max-h-[28rem] object-contain rounded-xl bg-white" />
+              <button type="button" onClick={() => previewDialog.current?.showModal()} aria-haspopup="dialog" className={`${buttonStyle} mt-2 w-full border border-surface-border text-on-surface`}>
+                <Icon className="text-[20px]">zoom_in</Icon>Ampliar foto
+              </button>
+              <dialog ref={previewDialog} aria-labelledby="receipt-preview-title" className="m-auto w-[calc(100%_-_2rem)] max-w-5xl max-h-[calc(100dvh_-_2rem)] rounded-2xl border border-surface-border bg-surface-elevated p-4 text-on-surface shadow-xl backdrop:bg-black/60">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h3 id="receipt-preview-title" className="font-label-md">Foto completa de la boleta</h3>
+                  <button type="button" onClick={() => previewDialog.current?.close()} className={`${buttonStyle} shrink-0 border border-surface-border text-on-surface`}>
+                    <Icon className="text-[20px]">close</Icon>Cerrar
+                  </button>
+                </div>
+                {/* Native modal dialog provides focus trapping, restoration and Escape dismissal. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={selection.preview} alt="Boleta completa ampliada" className="h-[calc(100dvh_-_11rem)] max-h-[75dvh] w-full rounded-xl bg-white object-contain" />
+              </dialog>
             </div>
           ) : (
             <div className="flex items-center gap-3 py-5 text-on-surface mb-3"><Icon className="text-primary text-[32px]">description</Icon><p>{previewFailed ? 'No se pudo mostrar la foto. Si no se puede analizar, elige una imagen JPG o usa «Tomar foto».' : 'PDF listo para analizar'}</p></div>

@@ -72,7 +72,7 @@ Abre [localhost:3000](http://localhost:3000). Para una base existente, revisa y 
 - **Next.js y React:** aplicación web y rutas del servidor.
 - **TypeScript y Tailwind CSS:** tipos y estilos de la interfaz.
 - **Supabase / PostgreSQL:** almacenamiento y cálculo de comisiones.
-- **Google Gemini:** lectura automática de boletas.
+- **Gemini, Qwen, DeepSeek o Grok:** lectura de boletas con proveedores configurables y respaldo ante fallos. [Configuración y evaluación](docs/LECTURA_BOLETAS.md).
 - **SheetJS:** exportación a Excel.
 
 El código de las páginas está en [`src/app`](src/app), los componentes en [`src/components`](src/components) y el esquema inicial en [`database.sql`](database.sql).

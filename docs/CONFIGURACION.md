@@ -6,7 +6,7 @@
 
 - Node.js 22 LTS y npm.
 - Un proyecto de Supabase para almacenar ventas y calcular comisiones.
-- Una clave de Gemini para la lectura automática de boletas.
+- Una clave de un proveedor visual compatible para la lectura automática de boletas. Gemini conserva compatibilidad; también se admiten Qwen, DeepSeek y Grok.
 
 ## Instalación
 
@@ -29,6 +29,8 @@ GEMINI_API_KEY=tu-clave-de-servidor
 ```
 
 Las dos variables `NEXT_PUBLIC_*` son públicas. Nunca pongas una clave `service_role` en ellas. `GEMINI_API_KEY` debe permanecer en el servidor. No publiques `.env.local`, capturas de claves ni secretos en issues o pull requests.
+
+La [guía de lectura de boletas](LECTURA_BOLETAS.md) explica proveedores, respaldo automático, variables y evaluación. Sin claves alternativas, Gemini sigue siendo el único servicio disponible.
 
 ## Base de datos
 

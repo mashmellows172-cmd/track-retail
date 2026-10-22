@@ -1,11 +1,12 @@
 'use client';
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import { Barcode, Camera, ChevronLeft, ChevronRight, ExternalLink, Package, Search, Upload, X, AlertTriangle, TrendingDown, Tv, Laptop, Refrigerator, Smartphone } from 'lucide-react';
+import { Barcode, Camera, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ExternalLink, Package, Search, Upload, X, AlertTriangle, TrendingDown } from 'lucide-react';
 import { channelAdvice, findProduct, type StockProduct, type StockSnapshot } from '@/lib/stock';
 import { loadStock, saveStock } from '@/lib/stockStorage';
 import ProductBarcodeScanner from './ProductBarcodeScanner';
 import ProductVisual from './ProductVisual';
-import {productKind} from '@/lib/productPresentation';
+import {productGroup,productGroups,matchesProductGroup,type ProductGroup} from '@/lib/productPresentation';
+import {ProductGroupGlyph} from './ProductGlyph';
 import {chileDate} from '@/lib/validation';
 
 const money = (n: number) => n.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
@@ -14,7 +15,6 @@ const button = 'min-h-12 inline-flex items-center justify-center gap-2 rounded-x
 const brands = ['AMERICAN TOURISTER','URSUS TROTTER','UNDER ARMOUR','SAMSUNG','MOTOROLA','XIAOMI','HISENSE','MADEMSA','SINDELEN','SKECHERS','BROTHER','THOMAS','AIROLITE','KENDAL','SIEGEN','JANOME','MIDEA','PHILIPS','ELECTROLUX','OSTER','FENSA','APPLE','HONOR','HUAWEI','LENOVO','ASUS','ACER','SONY','LG','HP','GAMA','CAIXUN','XTREM','HEAD','KAYSER'];
 function suggestedBrand(p: StockProduct) { return brands.find(b => (` ${p.description.toUpperCase()} `).includes(` ${b} `)) || ''; }
 const advice = { sala: 'Preferir sala', verificar: 'Confirmar estado · 1 unidad', consultar_web: 'Consultar alternativa online', incidencia: 'Stock negativo · revisar' };
-const quickGroups=[{id:'',label:'Todo',icon:Package},{id:'tv',label:'Televisión',icon:Tv},{id:'computer',label:'Computación',icon:Laptop},{id:'whitegoods',label:'Línea blanca',icon:Refrigerator},{id:'phone',label:'Telefonía',icon:Smartphone}];
 
 export default function StockCatalog() {
   const [snapshot, setSnapshot] = useState<StockSnapshot | null>(null);
@@ -24,7 +24,8 @@ export default function StockCatalog() {
   const [query, setQuery] = useState('');
   const deferredQuery = useDeferredValue(query);
   const [area, setArea] = useState('');
-  const [kind,setKind] = useState('');
+  const [kind,setKind] = useState<ProductGroup|''>('');
+  const [allGroups,setAllGroups] = useState(false);
   const [brand, setBrand] = useState('');
   const [availability, setAvailability] = useState('');
   const [sort, setSort] = useState('name');
@@ -48,12 +49,19 @@ export default function StockCatalog() {
   }, []);
   useEffect(() => { if (selected) detail.current?.showModal(); }, [selected]);
   const products = snapshot?.products;
+  const groupCounts = useMemo(()=>{
+    const counts=new Map<ProductGroup,number>();
+    for(const product of products || []) {const group=productGroup(product);counts.set(group,(counts.get(group)||0)+1);}
+    return counts;
+  },[products]);
+  const availableGroups=productGroups.filter(group=>groupCounts.has(group.id));
+  const visibleGroups=allGroups ? availableGroups : availableGroups.filter((group,index)=>index<7 || group.id===kind);
   const areas = useMemo(() => [...new Set(products?.map(p => p.area) || [])].sort((a,b) => Number(a)-Number(b)), [products]);
   const availableBrands = useMemo(() => [...new Set(products?.map(suggestedBrand).filter(Boolean) || [])].sort(), [products]);
   const stats = useMemo(() => ({ positive: products?.filter(p => p.available > 0).length || 0, single: products?.filter(p => p.available === 1).length || 0, reduced: products?.filter(p => p.previousPrice !== undefined && p.price < p.previousPrice).length || 0 }), [products]);
   const filtered = useMemo(() => {
     const q = deferredQuery.trim().toLocaleUpperCase('es');
-    return (products || []).filter(p => (!kind || (kind === 'whitegoods' ? ['fridge','laundry','kitchen'].includes(productKind(p)) : productKind(p) === kind)) && (!area || p.area === area) && (!brand || suggestedBrand(p) === brand) && (!availability || channelAdvice(p.available) === availability) && (!maxPrice || p.price <= Number(maxPrice)) && (!q || `${p.description} ${p.plu} ${p.barcodes.join(' ')} ${p.category}`.toLocaleUpperCase('es').includes(q)))
+    return (products || []).filter(p => matchesProductGroup(p,kind) && (!area || p.area === area) && (!brand || suggestedBrand(p) === brand) && (!availability || channelAdvice(p.available) === availability) && (!maxPrice || p.price <= Number(maxPrice)) && (!q || `${p.description} ${p.plu} ${p.barcodes.join(' ')} ${p.category}`.toLocaleUpperCase('es').includes(q)))
       .sort((a,b) => sort === 'price' ? a.price-b.price : sort === 'discount' ? ((b.previousPrice ?? b.price)-b.price)-((a.previousPrice ?? a.price)-a.price) : a.description.localeCompare(b.description,'es'));
   }, [products, deferredQuery, area, kind, brand, availability, maxPrice, sort]);
   const pageCount = Math.max(1, Math.ceil(filtered.length/24));
@@ -114,7 +122,11 @@ export default function StockCatalog() {
         <div className="flex-1"><p className="text-xs tracking-wider text-secondary font-semibold mb-2">VENTA EN SALA</p><h2 id="sales-assistant-title" className="text-2xl font-semibold">Asistente de venta</h2><p className="mt-2 text-on-surface-variant">Escanea un artículo y consulta sus unidades, precio y referencia en ABC.</p></div>
         <button type="button" disabled={busy} onClick={() => setScanning(true)} className="w-full lg:w-auto lg:min-w-72 min-h-20 rounded-3xl bg-secondary text-on-secondary px-5 py-4 flex items-center justify-center gap-4 font-semibold text-lg hover:opacity-90 transition-opacity disabled:opacity-40"><Camera size={32} className="shrink-0" aria-hidden="true" /><span className="text-left">Escanear producto<span className="block text-sm font-normal">para vender</span></span></button>
       </section>
-      <div role="group" aria-label="Tipos de producto" className="flex flex-wrap gap-2">{quickGroups.map(({id,label,icon:Glyph})=><button type="button" key={id} aria-pressed={kind===id} onClick={()=>{setKind(id);setArea('');setQuery('');setPage(0);}} className={`${button.replace("hover:bg-surface-base", "")} rounded-2xl hover:opacity-90 ${kind===id?'bg-secondary text-on-secondary border-transparent':'bg-surface-elevated text-on-surface'}`}><Glyph size={20} aria-hidden="true" />{label}</button>)}</div>
+      <section aria-label="Tipos de producto" className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-semibold">Explorar por tipo</h2><p className="text-xs text-on-surface-variant">Cantidades de la carga completa</p></div>
+        <div id="product-type-groups" role="group" aria-label="Filtrar por tipo de producto" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">{[{id:'' as const,label:'Todo'},...visibleGroups].map(({id,label})=><button type="button" key={id} aria-pressed={kind===id} onClick={()=>{setKind(id);setArea('');setQuery('');setBrand('');setAvailability('');setMaxPrice('');setPage(0);}} className={`min-h-14 min-w-0 flex items-center gap-2 rounded-2xl border px-3 py-2 text-left text-sm transition-colors hover:opacity-90 ${kind===id?'bg-secondary text-on-secondary border-transparent':'bg-surface-elevated text-on-surface border-surface-border'}`}><ProductGroupGlyph group={id}/><span className="min-w-0 flex-1 break-words">{label}</span><span className="text-xs tabular-nums opacity-75">{(id ? groupCounts.get(id)||0 : products?.length||0).toLocaleString('es-CL')}</span></button>)}</div>
+        {availableGroups.length>7 && <button type="button" aria-expanded={allGroups} aria-controls="product-type-groups" onClick={()=>setAllGroups(value=>!value)} className={`${button} w-full sm:w-auto text-secondary`}>{allGroups?<ChevronUp size={18} aria-hidden="true"/>:<ChevronDown size={18} aria-hidden="true"/>}{allGroups?'Ver menos categorías':`Ver todas las categorías (${availableGroups.length})`}</button>}
+      </section>
       <section aria-label="Resumen del stock" className="grid grid-cols-2 lg:grid-cols-4 gap-3">{[['Productos',snapshot.products.length],['Con disponibilidad',stats.positive],['Una unidad · revisar',stats.single],['Bajaron de precio',stats.reduced]].map(([label,value]) => <div key={label} className="rounded-3xl border border-surface-border bg-surface-elevated p-4"><p className="text-sm text-on-surface-variant">{label}</p><p className="text-2xl font-semibold mt-2 tabular-nums">{Number(value).toLocaleString('es-CL')}</p></div>)}</section>
       <div className="flex flex-wrap justify-between gap-2 text-sm text-on-surface-variant"><p>{snapshot.store} · Informe del <strong className="text-on-surface">{snapshot.date}</strong></p><p>Disponibilidad según el informe; confirma antes de vender.</p></div>
       <section aria-label="Buscar y filtrar productos" className="rounded-3xl border border-surface-border bg-surface-elevated p-4 space-y-4"><form onSubmit={e => { e.preventDefault(); onCode(query); }} className="flex flex-wrap gap-2"><label className="flex-1 min-w-0"><span className="block text-sm font-medium mb-2">Nombre, PLU o código de barras</span><span className="relative block"><Search size={20} aria-hidden="true" className="absolute left-3 top-4 text-on-surface-variant" /><input className={`${field} pl-10`} value={query} onChange={e => { setQuery(e.target.value); setPage(0); }} placeholder="Busca entre tus productos…" /></span></label><button type="submit" className={`${button} self-end`} aria-label="Buscar código exacto"><Barcode aria-hidden="true" size={20} /></button></form>
