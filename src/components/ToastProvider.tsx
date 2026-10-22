@@ -1,5 +1,6 @@
 'use client';
 
+import Icon from '@/components/Icon';
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { Haptics } from '@/lib/haptics';
 
@@ -54,6 +55,7 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
         {toasts.map(toast => (
           <div
             key={toast.id}
+            role={toast.type === 'error' ? 'alert' : 'status'}
             className={`
               animate-in slide-in-from-bottom-5 fade-in zoom-in-95 duration-300
               pointer-events-auto px-6 py-3 rounded-full font-label-md shadow-2xl flex items-center gap-2 max-w-sm w-full backdrop-blur-md border
@@ -62,9 +64,9 @@ export const ToastProvider = ({ children }: { children: ReactNode }) => {
               ${toast.type === 'info' ? 'bg-surface-variant/90 text-on-surface border-white/10' : ''}
             `}
           >
-            <span className="material-symbols-outlined text-[20px]">
+            <Icon className=" text-[20px]">
               {toast.type === 'error' ? 'error' : toast.type === 'success' ? 'check_circle' : 'info'}
-            </span>
+            </Icon>
             <span className="leading-tight">{toast.message}</span>
           </div>
         ))}

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { VentaOCR } from '@/types/venta';
+import { isCalendarDate } from '@/lib/validation';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
@@ -24,18 +25,34 @@ Responde ÚNICAMENTE con este JSON (reemplaza los valores):
 
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
-    const file = formData.get('image') as File | null;
+    let formData: FormData;
+    try { formData = await req.formData(); }
+    catch { return NextResponse.json({ error: 'Formulario inválido' }, { status: 400 }); }
+    const file = formData.get('image');
 
-    if (!file) {
+    if (!(file instanceof File) || file.size === 0) {
       return NextResponse.json({ error: 'No se recibió ninguna imagen' }, { status: 400 });
     }
 
+    if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(file.type)) {
+      return NextResponse.json({ error: 'Usa una imagen JPG, PNG, WebP o un PDF.' }, { status: 415 });
+    }
+    if (file.size > 8 * 1024 * 1024) return NextResponse.json({ error: 'El archivo debe pesar como máximo 8 MB.' }, { status: 413 });
     const arrayBuffer = await file.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    const prefix = (signature: number[], offset = 0) => signature.every((byte, index) => bytes[offset + index] === byte);
+    const signatures: Record<string, boolean> = {
+      'image/jpeg': prefix([255, 216, 255]),
+      'image/png': prefix([137, 80, 78, 71, 13, 10, 26, 10]),
+      'image/webp': prefix([82, 73, 70, 70]) && prefix([87, 69, 66, 80], 8),
+      'application/pdf': prefix([37, 80, 68, 70, 45]),
+    };
+    if (!signatures[file.type]) return NextResponse.json({ error: 'El contenido del archivo no coincide con su formato.' }, { status: 415 });
+    if (!process.env.GEMINI_API_KEY) return NextResponse.json({ error: 'El escáner no está configurado. Puedes ingresar la boleta manualmente.' }, { status: 503 });
     const base64Image = Buffer.from(arrayBuffer).toString('base64');
     const mimeType = (file.type && file.type !== 'application/octet-stream') ? file.type : 'image/jpeg';
 
-    const modelNames = ['gemini-3.8-flash', 'gemini-flash-latest'];
+    const modelNames = [process.env.GEMINI_MODEL || 'gemini-flash-latest'];
     let result = null;
     let lastError = null;
 
@@ -45,8 +62,9 @@ export async function POST(req: NextRequest) {
         generationConfig: {
           temperature: 0.1,
           maxOutputTokens: 1024,
+          responseMimeType: 'application/json',
         }
-      });
+      }, { timeout: 30000 });
 
       // Reintento con backoff para absorber picos temporales 503 de Gemini
       for (let attempt = 0; attempt < 2; attempt++) {
@@ -86,18 +104,36 @@ export async function POST(req: NextRequest) {
     try {
       parsed = JSON.parse(jsonStr);
     } catch {
-      console.error('Gemini raw output (non-JSON):', text);
+      console.error('OCR returned invalid JSON');
       return NextResponse.json(
         { error: 'La IA no pudo interpretar la boleta. Asegúrate de que la foto esté enfocada y sin sombras.' },
         { status: 422 }
       );
     }
 
-    return NextResponse.json(parsed);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return NextResponse.json({ error: 'La IA no devolvió una boleta válida. Intenta otra foto.' }, { status: 422 });
+    }
+    const invalidMoney = ['precio_producto', 'valor_garantia', 'total_boleta', 'cantidad_unidades'].some(key => {
+      const value = parsed[key as keyof VentaOCR];
+      return value != null && (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0 || value > 999999999999);
+    });
+    if (invalidMoney || (parsed.fecha_compra != null && !isCalendarDate(parsed.fecha_compra)) ||
+      (parsed.canal != null && !['caja', 'internet'].includes(parsed.canal)) ||
+      [parsed.folio, parsed.numero_pedido].some(value => value != null && (typeof value !== 'string' || value.length > 120))) {
+      return NextResponse.json({ error: 'Los datos extraídos no son válidos. Intenta otra foto o ingresa manualmente.' }, { status: 422 });
+    }
+    const receipt: VentaOCR = {
+      folio: parsed.folio ?? null, fecha_compra: parsed.fecha_compra ?? null,
+      precio_producto: parsed.precio_producto ?? null, cantidad_unidades: parsed.cantidad_unidades ?? 1,
+      valor_garantia: parsed.valor_garantia ?? null, total_boleta: parsed.total_boleta ?? null,
+      canal: parsed.canal ?? null, numero_pedido: parsed.numero_pedido ?? null,
+    };
+    return NextResponse.json(receipt);
 
-  } catch (error: any) {
-    console.error('Error en /api/ocr:', error);
-    const msg = error.message || 'Error interno';
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : '';
+    console.error('Error en /api/ocr: solicitud al proveedor fallida');
     
     if (msg.includes('429') || msg.includes('quota') || msg.includes('Quota')) {
       return NextResponse.json({ error: 'La API Key de Gemini agotó su cuota gratuita. Por favor, espera unos minutos o cambia a un plan de pago.' }, { status: 429 });
@@ -106,6 +142,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Los servidores de Google Gemini están saturados. Intenta de nuevo en unos segundos.' }, { status: 503 });
     }
 
-    return NextResponse.json({ error: `Error de la IA: ${msg}` }, { status: 500 });
+    return NextResponse.json({ error: 'No se pudo analizar la boleta. Intenta nuevamente o ingresa los datos manualmente.' }, { status: 500 });
   }
 }

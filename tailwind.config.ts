@@ -77,14 +77,14 @@ const config: Config = {
         "stack-lg": "32px"
       },
       fontFamily: {
-        "body-lg": ["Inter", "sans-serif"],
-        "label-sm": ["Inter", "sans-serif"],
-        "headline-md": ["Outfit", "sans-serif"],
-        "display-lg": ["Outfit", "sans-serif"],
-        "display-lg-mobile": ["Outfit", "sans-serif"],
-        "headline-sm": ["Outfit", "sans-serif"],
-        "body-md": ["Inter", "sans-serif"],
-        "label-md": ["Inter", "sans-serif"]
+        "body-lg": ["var(--font-inter)", "sans-serif"],
+        "label-sm": ["var(--font-inter)", "sans-serif"],
+        "headline-md": ["var(--font-outfit)", "sans-serif"],
+        "display-lg": ["var(--font-outfit)", "sans-serif"],
+        "display-lg-mobile": ["var(--font-outfit)", "sans-serif"],
+        "headline-sm": ["var(--font-outfit)", "sans-serif"],
+        "body-md": ["var(--font-inter)", "sans-serif"],
+        "label-md": ["var(--font-inter)", "sans-serif"]
       },
       fontSize: {
         "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],

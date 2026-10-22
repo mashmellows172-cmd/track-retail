@@ -1,5 +1,6 @@
 'use client';
 
+import Icon from '@/components/Icon';
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
@@ -35,7 +36,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="flex flex-col items-center justify-center p-8 bg-error/10 border border-error/20 rounded-2xl animate-in fade-in">
           <div className="w-16 h-16 bg-error/20 text-error rounded-full flex items-center justify-center mb-4">
-            <span className="material-symbols-outlined text-[32px]">warning</span>
+            <Icon className=" text-[32px]">warning</Icon>
           </div>
           <h2 className="font-headline-sm text-error mb-2">Algo salió mal</h2>
           <p className="font-body-sm text-on-surface-variant text-center max-w-xs mb-6">

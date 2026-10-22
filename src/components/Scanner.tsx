@@ -1,5 +1,6 @@
 'use client';
 
+import Icon from '@/components/Icon';
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { VentaOCR } from '@/types/venta';
@@ -62,13 +63,15 @@ export default function Scanner({ onScanSuccess, onManualEntry }: ScannerProps) 
         catch { /* use original if compress fails */ }
       }
 
+      if (file.size > 8 * 1024 * 1024) throw new Error('El archivo debe pesar como máximo 8 MB.');
+      if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(file.type)) throw new Error('Usa una imagen JPG, PNG, WebP o un PDF.');
       setProgress(50);
       setLoadingText('Analizando con IA...');
 
       const formData = new FormData();
       formData.append('image', file);
 
-      const res = await fetch('/api/ocr', { method: 'POST', body: formData });
+      const res = await fetch('/api/ocr', { method: 'POST', body: formData, signal: AbortSignal.timeout(65000) });
 
       setProgress(80);
       setLoadingText('Extrayendo datos...');
@@ -116,13 +119,13 @@ export default function Scanner({ onScanSuccess, onManualEntry }: ScannerProps) 
 
       {/* Error inline — siempre visible */}
       {errorMsg && (
-        <div className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
-          <span className="material-symbols-outlined text-red-400 text-[20px] mt-0.5 shrink-0">error</span>
+        <div role="alert" className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
+          <Icon className=" text-error text-[20px] mt-0.5 shrink-0">error</Icon>
           <div className="flex-1">
-            <p className="font-label-md text-red-400 mb-2">{errorMsg}</p>
+            <p className="font-label-md text-error mb-2">{errorMsg}</p>
             <button
               onClick={() => setErrorMsg(null)}
-              className="text-xs text-red-400/70 underline hover:text-red-400"
+              className="text-xs text-error underline hover:text-error"
             >
               Cerrar
             </button>
@@ -136,7 +139,7 @@ export default function Scanner({ onScanSuccess, onManualEntry }: ScannerProps) 
           <div className="bg-surface-base border border-surface-border rounded-xl p-4 hover:border-primary/50 transition-colors">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary text-[20px]">photo_camera</span>
+                <Icon className=" text-primary text-[20px]">photo_camera</Icon>
               </div>
               <div>
                 <p className="font-label-md text-on-surface">Tomar Foto</p>
@@ -162,7 +165,7 @@ export default function Scanner({ onScanSuccess, onManualEntry }: ScannerProps) 
           <div className="bg-surface-base border border-surface-border rounded-xl p-4 hover:border-secondary/50 transition-colors">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center">
-                <span className="material-symbols-outlined text-secondary text-[20px]">image</span>
+                <Icon className=" text-secondary text-[20px]">image</Icon>
               </div>
               <div>
                 <p className="font-label-md text-on-surface">Subir desde Galería</p>
@@ -171,7 +174,7 @@ export default function Scanner({ onScanSuccess, onManualEntry }: ScannerProps) 
             </div>
             <input
               type="file"
-              accept="image/*,application/pdf"
+              accept="image/jpeg,image/png,image/webp,application/pdf"
               onChange={handleFileChange}
               disabled={loading}
               className="block w-full text-sm text-on-surface-variant
@@ -195,7 +198,7 @@ export default function Scanner({ onScanSuccess, onManualEntry }: ScannerProps) 
           className="w-full border border-surface-border text-on-surface-variant py-3 rounded-xl font-label-md
             flex items-center justify-center gap-2 hover:bg-surface-base hover:text-on-surface transition-colors disabled:opacity-40"
         >
-          <span className="material-symbols-outlined text-[18px]">keyboard</span>
+          <Icon className=" text-[18px]">keyboard</Icon>
           Ingresar datos manualmente
         </button>
       </div>
@@ -219,7 +222,7 @@ export default function Scanner({ onScanSuccess, onManualEntry }: ScannerProps) 
           </div>
 
           <p className="text-on-surface font-bold text-lg mb-1">{progress}%</p>
-          <p className="text-on-surface-variant text-sm animate-pulse">{loadingText}</p>
+          <p role="status" className="text-on-surface-variant text-sm animate-pulse">{loadingText}</p>
         </div>
       )}
     </div>

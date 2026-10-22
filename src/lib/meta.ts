@@ -7,7 +7,7 @@ export const getMetaMensual = (mes: string): number => {
       const val = parseInt(saved, 10);
       if (!isNaN(val)) return val;
     }
-  } catch (e) {
+  } catch {
     console.warn('LocalStorage no accesible para metas');
   }
   
@@ -18,7 +18,8 @@ export const setMetaMensual = (mes: string, valor: number): void => {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(`trackretail_meta_${mes}`, valor.toString());
-  } catch (e) {
+    window.dispatchEvent(new Event('trackretail:storage'));
+  } catch {
     console.warn('No se pudo guardar la meta');
   }
 };

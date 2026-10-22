@@ -1,38 +1,31 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import Icon from '@/components/Icon';
+import { useState, useRef } from 'react';
+import { useStoredString, storeString } from '@/hooks/useStoredString';
 
 export default function VendedorSelector() {
-  const [vendedor, setVendedor] = useState<string>('');
+  const savedVendedor = useStoredString('trackretail_vendedor') || '';
+  const [draft, setDraft] = useState('');
+  const vendedor = savedVendedor;
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('trackretail_vendedor');
-      if (saved && saved.trim()) {
-        setVendedor(saved.trim());
-      }
-    } catch {
-      // localStorage not available
-    }
-  }, []);
-
   const handleSave = () => {
-    const name = vendedor.trim();
+    const name = draft.trim();
     if (name.length === 0) return;
     try {
-      localStorage.setItem('trackretail_vendedor', name);
+      storeString('trackretail_vendedor', name);
     } catch {
-      // localStorage not available
+      return;
     }
-    setVendedor(name);
+    setDraft(name);
     setIsEditing(false);
-    // Force page reload so dashboard picks up new vendedor
-    window.location.reload();
+
   };
 
   const handleEdit = () => {
+    setDraft(savedVendedor);
     setIsEditing(true);
     setTimeout(() => inputRef.current?.focus(), 50);
   };
@@ -42,9 +35,9 @@ export default function VendedorSelector() {
     return (
       <button
         onClick={handleEdit}
-        className="flex items-center gap-2 bg-primary/10 border border-primary/30 text-primary px-3 py-2 rounded-xl text-sm font-medium hover:bg-primary/20 transition-colors w-full"
+        className="flex items-center gap-2 bg-primary/10 border border-primary/30 text-primary px-3 py-2 rounded-xl text-sm font-medium hover:bg-primary/20 transition-colors w-full min-w-0"
       >
-        <span className="material-symbols-outlined text-[18px]">person_add</span>
+        <Icon className=" text-[18px]">person_add</Icon>
         <span className="truncate">Configurar nombre</span>
       </button>
     );
@@ -56,9 +49,11 @@ export default function VendedorSelector() {
         <input
           ref={inputRef}
           type="text"
+          aria-label="Nombre del vendedor"
+          maxLength={120}
           placeholder="Escribe tu nombre..."
-          value={vendedor}
-          onChange={e => setVendedor(e.target.value)}
+          value={draft}
+          onChange={e => setDraft(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') setIsEditing(false); }}
           className="w-full bg-surface-base border border-primary/50 text-on-surface rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-colors"
           autoComplete="off"
@@ -86,15 +81,15 @@ export default function VendedorSelector() {
   return (
     <button
       onClick={handleEdit}
-      className="flex items-center gap-2 w-full text-left group"
+      className="flex items-center gap-2 w-full min-w-0 text-left group"
     >
       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
-        <span
-          className="material-symbols-outlined text-[15px] text-background"
+        <Icon
+          className=" text-[15px] text-background"
           style={{ fontVariationSettings: "'FILL' 1" }}
         >
           person
-        </span>
+        </Icon>
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-[10px] text-on-surface-variant leading-tight">Activo como</p>
@@ -102,9 +97,9 @@ export default function VendedorSelector() {
           {vendedor}
         </p>
       </div>
-      <span className="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-secondary transition-colors shrink-0">
+      <Icon className=" text-[16px] text-on-surface-variant group-hover:text-secondary transition-colors shrink-0">
         edit
-      </span>
+      </Icon>
     </button>
   );
 }

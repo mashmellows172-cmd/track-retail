@@ -1,7 +1,9 @@
 'use client';
 
+import Icon from '@/components/Icon';
 import { useMemo } from 'react';
 import { Venta } from '@/types/venta';
+import { chileDate } from '@/lib/validation';
 
 interface GraficoMensualProps {
   ventas: Venta[];
@@ -13,10 +15,10 @@ export default function GraficoMensual({ ventas }: GraficoMensualProps) {
     const dias: { full: string; display: string }[] = [];
 
     for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      const displayStr = d.getDate() + '/' + (d.getMonth() + 1);
+      const d = new Date(`${chileDate()}T12:00:00Z`);
+      d.setUTCDate(d.getUTCDate() - i);
+      const dateStr = chileDate(d);
+      const displayStr = Number(dateStr.slice(8, 10)) + '/' + Number(dateStr.slice(5, 7));
       dias.push({ full: dateStr, display: displayStr });
       ventasPorDia[dateStr] = 0;
     }
@@ -37,22 +39,22 @@ export default function GraficoMensual({ ventas }: GraficoMensualProps) {
 
       {ventas.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center p-4 min-h-[160px] opacity-70">
-          <span className="material-symbols-outlined text-[48px] text-primary/40 mb-2">trending_up</span>
+          <Icon className=" text-[48px] text-primary/40 mb-2">trending_up</Icon>
           <p className="font-label-md text-label-md text-on-surface-variant">Sin comisiones esta semana.</p>
-          <p className="font-label-sm text-label-sm text-on-surface-variant/70">¡Registra tu primera boleta!</p>
+          <p className="font-label-sm text-label-sm text-on-surface-variant">¡Registra tu primera boleta!</p>
         </div>
       ) : (
         <div className="flex items-end gap-2 h-40 mt-auto">
           {dias.map(dia => {
             const valor = ventasPorDia[dia.full];
             const height = Math.max(4, (valor / maxVenta) * 100);
-            const isToday = dia.full === new Date().toISOString().split('T')[0];
+            const isToday = dia.full === chileDate();
 
             return (
               <div key={dia.full} className="flex-1 flex flex-col items-center gap-1 group relative h-full justify-end">
                 {/* Etiqueta siempre visible para valores > 0 */}
                 {valor > 0 && (
-                  <span className="font-label-sm text-[9px] text-on-surface-variant/80 mb-1">
+                  <span className="font-label-sm text-[9px] text-on-surface-variant mb-1">
                     ${valor >= 1000 ? (valor/1000).toFixed(0) + 'k' : valor}
                   </span>
                 )}

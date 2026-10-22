@@ -1,38 +1,34 @@
 'use client';
 
+import Icon from '@/components/Icon';
 import { useEffect, useState } from 'react';
 import TablaHistorial from '@/components/TablaHistorial';
 import { Venta } from '@/types/venta';
 import { Loader2 } from 'lucide-react';
+import { useStoredString } from '@/hooks/useStoredString';
+import { chileDate } from '@/lib/validation';
 
 export default function HistorialPage() {
+  const vendedor = useStoredString('trackretail_vendedor');
+  return <SellerHistory key={vendedor || ''} vendedor={vendedor} />;
+}
+
+function SellerHistory({ vendedor }: { vendedor: string | null }) {
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [vendedor, setVendedor] = useState<string | null>(null);
 
-  const dateObj = new Date();
-  const [selectedYear, setSelectedYear] = useState(dateObj.getFullYear().toString());
-  const [selectedMonth, setSelectedMonth] = useState((dateObj.getMonth() + 1).toString().padStart(2, '0'));
+
+  const dateObj = new Date(`${chileDate()}T12:00:00Z`);
+  const [selectedYear, setSelectedYear] = useState(dateObj.getUTCFullYear().toString());
+  const [selectedMonth, setSelectedMonth] = useState((dateObj.getUTCMonth() + 1).toString().padStart(2, '0'));
 
   const mesFiltro = `${selectedYear}-${selectedMonth}`;
 
   useEffect(() => {
-    try {
-      const v = localStorage.getItem('trackretail_vendedor');
-      setVendedor(v);
-    } catch {
-      setVendedor(null);
-    }
-  }, []);
-
-  useEffect(() => {
     if (vendedor === undefined) return; // still loading localStorage
 
-    if (!vendedor) {
-      setLoading(false);
-      return;
-    }
+    if (!vendedor) return;
 
     const controller = new AbortController();
 
@@ -77,6 +73,7 @@ export default function HistorialPage() {
           <label className="font-label-sm text-label-sm text-on-surface-variant">Filtrar por mes</label>
           <div className="flex items-center gap-2">
             <select
+              aria-label="Mes"
               value={selectedMonth}
               onChange={e => setSelectedMonth(e.target.value)}
               className="bg-surface-elevated border border-surface-border text-on-surface font-label-md text-label-md p-2.5 rounded-xl outline-none focus:border-primary transition-colors cursor-pointer"
@@ -88,12 +85,13 @@ export default function HistorialPage() {
               ))}
             </select>
             <select
+              aria-label="Año"
               value={selectedYear}
               onChange={e => setSelectedYear(e.target.value)}
               className="bg-surface-elevated border border-surface-border text-on-surface font-label-md text-label-md p-2.5 rounded-xl outline-none focus:border-primary transition-colors cursor-pointer"
             >
               {[0, 1, 2].map(offset => {
-                const year = new Date().getFullYear() - offset;
+                const year = dateObj.getUTCFullYear() - offset;
                 return <option key={year} value={year.toString()}>{year}</option>;
               })}
             </select>
@@ -101,9 +99,9 @@ export default function HistorialPage() {
         </div>
       </header>
 
-      {!vendedor && !loading && (
+      {!vendedor && (
         <div className="flex flex-col items-center justify-center min-h-[40vh] text-center px-4">
-          <span className="material-symbols-outlined text-primary text-[48px] mb-4">person_add</span>
+          <Icon className=" text-primary text-[48px] mb-4">person_add</Icon>
           <h3 className="font-headline-md text-on-surface mb-2">Configura tu perfil primero</h3>
           <p className="font-body-md text-on-surface-variant max-w-sm">
             Ingresa tu nombre en la barra superior para ver tu historial de ventas.
@@ -112,13 +110,13 @@ export default function HistorialPage() {
       )}
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-xl mb-6 font-label-md flex items-center gap-2">
-          <span className="material-symbols-outlined text-[18px]">error</span>
+        <div className="bg-red-500/10 border border-red-500/30 text-error p-4 rounded-xl mb-6 font-label-md flex items-center gap-2">
+          <Icon className=" text-[18px]">error</Icon>
           {error}
         </div>
       )}
 
-      {loading ? (
+      {vendedor && loading ? (
         <div className="flex justify-center p-16">
           <Loader2 className="animate-spin text-primary" size={40} />
         </div>

@@ -1,6 +1,8 @@
 'use client';
 
+import Icon from '@/components/Icon';
 import { Venta } from '@/types/venta';
+import { chileDate } from '@/lib/validation';
 
 interface TablaHistorialProps {
   ventas: Venta[];
@@ -17,6 +19,7 @@ export default function TablaHistorial({ ventas }: TablaHistorialProps) {
       'Tipo Garantía': v.tipo_garantia === 'telefonia' ? 'Telefonía' : 'Líneas Duras',
       'Años Garantía': v.anos_garantia,
       'Precio Base ($)': v.precio_producto,
+      'Unidades': v.cantidad_unidades,
       'Valor Garantía ($)': v.valor_garantia,
       'Total Boleta ($)': v.total_boleta,
       'Nº Pedido': v.numero_pedido || 'N/A',
@@ -25,14 +28,14 @@ export default function TablaHistorial({ ventas }: TablaHistorialProps) {
     const ws = XLSX.utils.json_to_sheet(datosExportar);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Ventas');
-    XLSX.writeFile(wb, 'Comisiones_BryanApp_' + new Date().toISOString().split('T')[0] + '.xlsx');
+    XLSX.writeFile(wb, 'Comisiones_BryanApp_' + chileDate() + '.xlsx');
   };
 
 
   return (
     <div className="glass-panel rounded-2xl overflow-hidden">
       {/* Header */}
-      <div className="p-5 border-b border-white/5 flex justify-between items-center">
+      <div className="p-4 sm:p-5 border-b border-surface-border flex flex-col sm:flex-row gap-4 justify-between sm:items-center">
         <div>
           <h3 className="font-headline-sm text-headline-sm text-on-surface">Registro Detallado</h3>
           <p className="font-label-sm text-label-sm text-on-surface-variant mt-0.5">{ventas.length} registros encontrados</p>
@@ -40,16 +43,16 @@ export default function TablaHistorial({ ventas }: TablaHistorialProps) {
         <button
           onClick={exportarExcel}
           disabled={ventas.length === 0}
-          className="flex items-center gap-2 bg-gradient-to-r from-secondary-container to-secondary text-on-secondary px-4 py-2 rounded-xl font-label-md text-label-md hover:scale-[1.02] transition-all shadow-[0_0_12px_rgba(78,222,163,0.25)] disabled:opacity-40 disabled:scale-100"
+          className="flex items-center gap-2 bg-secondary text-on-secondary px-4 py-2 rounded-xl font-label-md text-label-md hover:scale-[1.02] transition-all shadow-[0_0_12px_rgba(78,222,163,0.25)] disabled:opacity-40 disabled:scale-100"
         >
-          <span className="material-symbols-outlined text-[18px]">download</span>
+          <Icon className=" text-[18px]">download</Icon>
           Exportar Excel
         </button>
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Historial de ventas, desplaza horizontalmente para ver todas las columnas">
+        <table className="w-full min-w-[640px] text-left border-collapse">
           <thead>
             <tr className="border-b border-white/5 bg-black/20">
               <th className="font-label-sm text-label-sm text-on-surface-variant p-4 uppercase tracking-wider">Fecha</th>
@@ -74,7 +77,7 @@ export default function TablaHistorial({ ventas }: TablaHistorialProps) {
                   <td className="p-4">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded bg-surface-variant flex items-center justify-center text-on-surface-variant group-hover:bg-primary/20 group-hover:text-primary transition-colors">
-                        <span className="material-symbols-outlined text-[14px]">receipt</span>
+                        <Icon className=" text-[14px]">receipt</Icon>
                       </div>
                       <span className="font-label-md text-label-md text-on-surface">{venta.folio}</span>
                     </div>
@@ -94,7 +97,7 @@ export default function TablaHistorial({ ventas }: TablaHistorialProps) {
                     <span className="font-label-md text-label-md text-on-surface">
                       {venta.anos_garantia} {venta.anos_garantia === 1 ? 'año' : 'años'}
                     </span>
-                    <p className="font-label-sm text-label-sm text-on-surface-variant/70">
+                    <p className="font-label-sm text-label-sm text-on-surface-variant">
                       {venta.tipo_garantia === 'telefonia' ? 'Telefonía' : 'L. Duras'}
                     </p>
                   </td>

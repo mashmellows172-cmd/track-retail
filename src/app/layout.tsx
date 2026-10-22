@@ -1,3 +1,4 @@
+import Icon from '@/components/Icon';
 import type { Metadata, Viewport } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
@@ -25,8 +26,6 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
   themeColor: "#10131a",
 };
@@ -51,37 +50,24 @@ export default function RootLayout({
   ].join(' ');
 
   return (
-    <html lang="en" className="dark">
+    <html lang="es" className="dark">
       <head>
         {/* Preconnect para reducir latencia de DNS/TLS con Google Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Media=print + onload=swap: carga no bloqueante — no retrasa el First Contentful Paint */}
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-          media="print"
-          // @ts-expect-error — onLoad no tipado en Next.js pero es válido en el DOM
-          onLoad="this.media='all'"
-        />
-        <noscript>
-          <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
-          />
-        </noscript>
       </head>
       <body className={bodyClass}>
         <ErrorBoundary>
+          <a href="#contenido" className="skip-link">Saltar al contenido</a>
           {/* Mobile Top Header (Hidden on Desktop) */}
-          <div className="md:hidden flex items-center justify-between p-4 border-b border-surface-border bg-surface-base sticky top-0 z-40">
+          <div className="md:hidden flex flex-wrap items-center justify-between gap-3 p-4 border-b border-surface-border bg-surface-base sticky top-0 z-40">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-md bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-background text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>insights</span>
+                <Icon className=" text-background text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>insights</Icon>
               </div>
               <span className="font-headline-sm text-on-surface font-bold text-lg">BryanApp</span>
             </div>
-            <div className="w-1/2 max-w-[150px] flex items-center gap-2">
+            <div className="flex-1 min-w-[150px] max-w-full flex items-center gap-2">
               <ThemeToggle />
               <VendedorSelector />
             </div>
@@ -92,16 +78,16 @@ export default function RootLayout({
             {/* Logo */}
             <div className="px-6 mb-8 flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
-                <span
-                  className="material-symbols-outlined text-background"
+                <Icon
+                  className=" text-background"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
                   insights
-                </span>
+                </Icon>
               </div>
               <div className="flex-1">
                 <h1 className="font-headline-md text-headline-md font-bold text-on-surface">BryanApp</h1>
-                <p className="font-label-sm text-label-sm text-on-surface-variant/70">Inteligencia de Ventas</p>
+                <p className="font-label-sm text-label-sm text-on-surface-variant">Inteligencia de Ventas</p>
               </div>
               <ThemeToggle />
             </div>
@@ -112,7 +98,7 @@ export default function RootLayout({
                 href="/registro"
                 className="w-full bg-gradient-to-r from-primary-container to-inverse-primary text-on-primary-container font-label-md text-label-md py-3 rounded-lg flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-[0_0_15px_rgba(77,142,255,0.3)]"
               >
-                <span className="material-symbols-outlined text-[20px]">add</span>
+                <Icon className=" text-[20px]">add</Icon>
                 Nuevo Registro
               </Link>
             </div>
@@ -121,23 +107,23 @@ export default function RootLayout({
             <nav className="flex-1 flex flex-col gap-1 px-2">
               <Link
                 href="/"
-                className="flex items-center gap-3 px-4 py-3 text-on-surface-variant/70 hover:text-on-surface hover:bg-white/10 mx-2 rounded-lg hover:translate-x-1 transition-all duration-200"
+                className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-white/10 mx-2 rounded-lg hover:translate-x-1 transition-all duration-200"
               >
-                <span className="material-symbols-outlined">dashboard</span>
+                <Icon className="text-[24px]">dashboard</Icon>
                 <span className="font-label-md text-label-md">Panel de Control</span>
               </Link>
               <Link
                 href="/registro"
-                className="flex items-center gap-3 px-4 py-3 text-on-surface-variant/70 hover:text-on-surface hover:bg-white/10 mx-2 rounded-lg hover:translate-x-1 transition-all duration-200"
+                className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-white/10 mx-2 rounded-lg hover:translate-x-1 transition-all duration-200"
               >
-                <span className="material-symbols-outlined">qr_code_scanner</span>
+                <Icon className="text-[24px]">qr_code_scanner</Icon>
                 <span className="font-label-md text-label-md">Registrar Boleta</span>
               </Link>
               <Link
                 href="/historial"
-                className="flex items-center gap-3 px-4 py-3 text-on-surface-variant/70 hover:text-on-surface hover:bg-white/10 mx-2 rounded-lg hover:translate-x-1 transition-all duration-200"
+                className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-white/10 mx-2 rounded-lg hover:translate-x-1 transition-all duration-200"
               >
-                <span className="material-symbols-outlined">receipt_long</span>
+                <Icon className="text-[24px]">receipt_long</Icon>
                 <span className="font-label-md text-label-md">Historial</span>
               </Link>
             </nav>
@@ -149,7 +135,7 @@ export default function RootLayout({
           </aside>
 
           {/* Main Content */}
-          <main className="flex-1 w-full md:ml-[280px] p-4 md:p-10 min-h-[100dvh] flex flex-col gap-8 pb-24 md:pb-10 relative">
+          <main id="contenido" className="flex-1 min-w-0 w-full md:ml-[280px] p-4 md:p-10 min-h-[100dvh] flex flex-col gap-8 pb-24 md:pb-10 relative">
             <ToastProvider>
               <OfflineSyncManager />
               {children}
@@ -159,19 +145,20 @@ export default function RootLayout({
           {/* Mobile Bottom Nav */}
           <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface-elevated border-t border-surface-border z-50 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))] px-4 flex justify-around items-center">
             <Link href="/" className="flex flex-col items-center gap-1 p-2 text-on-surface-variant hover:text-secondary transition-colors">
-              <span className="material-symbols-outlined">dashboard</span>
+              <Icon className="text-[24px]">dashboard</Icon>
               <span className="font-label-sm text-[10px]">Inicio</span>
             </Link>
             <div className="relative -top-5">
               <Link
                 href="/registro"
+                aria-label="Registrar boleta"
                 className="w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-primary-container text-on-primary-container flex items-center justify-center shadow-[0_0_20px_rgba(77,142,255,0.5)] border-2 border-surface-container"
               >
-                <span className="material-symbols-outlined text-[28px]">add</span>
+                <Icon className=" text-[28px]">add</Icon>
               </Link>
             </div>
             <Link href="/historial" className="flex flex-col items-center gap-1 p-2 text-on-surface-variant hover:text-secondary transition-colors">
-              <span className="material-symbols-outlined">receipt_long</span>
+              <Icon className="text-[24px]">receipt_long</Icon>
               <span className="font-label-sm text-[10px]">Historial</span>
             </Link>
           </nav>

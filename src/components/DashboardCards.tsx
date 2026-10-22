@@ -1,6 +1,10 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import Icon from '@/components/Icon';
+import { useState, useRef, useMemo } from 'react';
 import { Venta } from '@/types/venta';
-import { getMetaMensual, setMetaMensual } from '@/lib/meta';
+import { setMetaMensual } from '@/lib/meta';
+import { useStoredString } from '@/hooks/useStoredString';
+import { chileDate } from '@/lib/validation';
+import { comisionTelefonia } from '@/lib/commissions';
 
 interface DashboardCardsProps {
   ventas: Venta[];
@@ -8,15 +12,13 @@ interface DashboardCardsProps {
 
 export default function DashboardCards({ ventas }: DashboardCardsProps) {
   const [isEditingMeta, setIsEditingMeta] = useState(false);
-  const [metaMensual, setMetaMensualState] = useState(150000);
+  const [draftMeta, setMetaMensualState] = useState<number | null>(null);
   const [simuladorPrecio, setSimuladorPrecio] = useState<string>('');
   const inputRef = useRef<HTMLInputElement>(null);
   
-  const currentMonth = new Date().toISOString().split('T')[0].substring(0, 7);
-
-  useEffect(() => {
-    setMetaMensualState(getMetaMensual(currentMonth));
-  }, [currentMonth]);
+  const currentMonth = chileDate().slice(0, 7);
+  const storedMeta = useStoredString(`trackretail_meta_${currentMonth}`);
+  const metaMensual = draftMeta ?? (Number(storedMeta) > 0 ? Number(storedMeta) : 150000);
 
   const handleSaveMeta = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -33,9 +35,8 @@ export default function DashboardCards({ ventas }: DashboardCardsProps) {
     const internetPercent = garantiasVendidas > 0 ? Math.round((internetSales / garantiasVendidas) * 100) : 0;
     const promedioComision = garantiasVendidas > 0 ? Math.round(totalComisiones / garantiasVendidas) : 0;
 
-    const today = new Date();
-    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-    const currentDay = today.getDate();
+    const [year, month, currentDay] = chileDate().split('-').map(Number);
+    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
     const remainingDays = daysInMonth - currentDay + 1;
 
     return { totalComisiones, garantiasVendidas, internetSales, internetPercent, promedioComision, remainingDays };
@@ -62,7 +63,7 @@ export default function DashboardCards({ ventas }: DashboardCardsProps) {
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10 rounded-lg bg-secondary/20 text-secondary flex items-center justify-center border border-secondary/30 neon-glow-secondary">
-                <span className="material-symbols-outlined">redeem</span>
+                <Icon className="text-[24px]">redeem</Icon>
               </div>
               <h3 className="font-headline-sm text-headline-sm text-on-surface">Bono Proyectado</h3>
             </div>
@@ -73,8 +74,9 @@ export default function DashboardCards({ ventas }: DashboardCardsProps) {
               }}
               className="text-on-surface-variant hover:text-secondary transition-colors"
               title="Editar meta"
+              aria-label="Editar meta mensual"
             >
-              <span className="material-symbols-outlined text-[20px]">edit</span>
+              <Icon className=" text-[20px]">edit</Icon>
             </button>
           </div>
           <div className="mt-auto">
@@ -92,7 +94,7 @@ export default function DashboardCards({ ventas }: DashboardCardsProps) {
               >
               </div>
             </div>
-            <div className="flex justify-between items-end mt-2 font-label-sm text-label-sm">
+            <div className="flex flex-wrap gap-3 justify-between items-end mt-2 font-label-sm text-label-sm">
               <span className={progresoMeta >= 100 ? "text-secondary font-bold" : "text-on-surface-variant"}>
                 {progresoMeta >= 100 ? '¡Meta superada!' : `Faltan $${faltaParaMeta.toLocaleString('es-CL')}`}
                 {progresoMeta < 100 && (
@@ -110,6 +112,9 @@ export default function DashboardCards({ ventas }: DashboardCardsProps) {
                     <input
                       ref={inputRef}
                       type="number"
+                      aria-label="Meta mensual en pesos"
+                      min="10000"
+                      step="1"
                       value={metaMensual}
                       onChange={e => setMetaMensualState(Number(e.target.value))}
                       onBlur={() => handleSaveMeta()}
@@ -138,7 +143,7 @@ export default function DashboardCards({ ventas }: DashboardCardsProps) {
         <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-full blur-2xl -mr-10 -mt-10 transition-all group-hover:bg-primary/20"></div>
         <div className="flex justify-between items-start mb-6 relative z-10">
           <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
-            <span className="material-symbols-outlined">receipt_long</span>
+            <Icon className="text-[24px]">receipt_long</Icon>
           </div>
         </div>
         <div className="relative z-10">
@@ -158,7 +163,7 @@ export default function DashboardCards({ ventas }: DashboardCardsProps) {
         <div className="absolute top-0 right-0 w-24 h-24 bg-tertiary/10 rounded-full blur-2xl -mr-10 -mt-10 transition-all group-hover:bg-tertiary/20"></div>
         <div className="flex justify-between items-start mb-6 relative z-10">
           <div className="w-10 h-10 rounded-lg bg-tertiary/10 text-tertiary flex items-center justify-center border border-tertiary/20">
-            <span className="material-symbols-outlined">shopping_cart</span>
+            <Icon className="text-[24px]">shopping_cart</Icon>
           </div>
           <span className="bg-tertiary/10 text-tertiary font-label-sm text-label-sm px-2 py-0.5 rounded-full border border-tertiary/20">
             {internetPercent}%
@@ -184,14 +189,17 @@ export default function DashboardCards({ ventas }: DashboardCardsProps) {
         <div className="relative z-10 h-full flex flex-col justify-between">
           <div>
             <h3 className="font-label-md text-label-md text-on-surface mb-3 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-[20px]">calculate</span>
+              <Icon className=" text-primary text-[20px]">calculate</Icon>
               Simulador de Comisión
             </h3>
             <div className="flex gap-2 items-center mb-3">
               <span className="text-on-surface-variant font-medium">$</span>
               <input 
                 type="number"
-                placeholder="Valor producto"
+                placeholder="Valor garantía"
+                aria-label="Valor de garantía para telefonía de un año"
+                min="0"
+                step="1"
                 value={simuladorPrecio}
                 onChange={(e) => setSimuladorPrecio(e.target.value)}
                 className="w-full bg-surface-base border border-surface-border text-on-surface rounded-lg p-2.5 text-sm outline-none focus:border-primary transition-colors"
@@ -199,9 +207,9 @@ export default function DashboardCards({ ventas }: DashboardCardsProps) {
             </div>
           </div>
           <div className="flex justify-between items-center pt-3 border-t border-surface-border mt-auto">
-            <span className="text-label-sm text-on-surface-variant">Comisión (3%):</span>
+            <span className="text-label-sm text-on-surface-variant">Telefonía · 1 año:</span>
             <span className="font-bold text-secondary text-[18px]">
-              ${simuladorPrecio ? Math.round(Number(simuladorPrecio) * 0.03).toLocaleString('es-CL') : '0'}
+              ${simuladorPrecio ? comisionTelefonia(Number(simuladorPrecio), 1).toLocaleString('es-CL') : '0'}
             </span>
           </div>
         </div>

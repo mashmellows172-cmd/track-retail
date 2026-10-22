@@ -1,5 +1,6 @@
 'use client';
 
+import Icon from '@/components/Icon';
 import { useEffect, useState, useCallback } from 'react';
 import DashboardCards from '@/components/DashboardCards';
 import GraficoMensual from '@/components/GraficoMensual';
@@ -7,29 +8,24 @@ import GraficoDistribucion from '@/components/GraficoDistribucion';
 import SimuladorComisiones from '@/components/SimuladorComisiones';
 import { Venta } from '@/types/venta';
 import Link from 'next/link';
+import { useStoredString } from '@/hooks/useStoredString';
+import { chileDate } from '@/lib/validation';
 
 export default function DashboardPage() {
+  const vendedor = useStoredString('trackretail_vendedor');
+  return <SellerDashboard key={vendedor || ''} vendedor={vendedor} />;
+}
+
+function SellerDashboard({ vendedor }: { vendedor: string | null }) {
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [vendedor, setVendedor] = useState<string | null | undefined>(undefined);
 
-  const currentMonth = new Date().toISOString().split('T')[0].substring(0, 7);
-
-  // Read vendedor from localStorage on mount
-  useEffect(() => {
-    try {
-      const v = localStorage.getItem('trackretail_vendedor');
-      setVendedor(v);
-    } catch {
-      setVendedor(null);
-    }
-  }, []);
+  const currentMonth = chileDate().slice(0, 7);
 
   const fetchVentas = useCallback(async (signal: AbortSignal) => {
     if (!vendedor) return;
-    setLoading(true);
-    setError(null);
+
     try {
       const url = `/api/ventas?vendedor_id=${encodeURIComponent(vendedor)}&mes=${currentMonth}`;
       const res = await fetch(url, { signal });
@@ -39,32 +35,35 @@ export default function DashboardPage() {
       }
       const data = await res.json();
       setVentas(Array.isArray(data) ? data : []);
+      setError(null);
     } catch (err: unknown) {
       // AbortError es esperado al navegar — no es un error real
-      if (err instanceof Error && err.name === 'AbortError') return;
+      if (signal.aborted) return;
       setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
-      setLoading(false);
+      if (!signal.aborted) setLoading(false);
     }
   }, [vendedor, currentMonth]);
 
   useEffect(() => {
     if (vendedor === undefined) return; // Still initializing
 
-    if (!vendedor) {
-      setLoading(false);
-      return;
-    }
+    if (!vendedor) return;
 
     const controller = new AbortController();
-    fetchVentas(controller.signal);
+    // Fetch updates state only after the network response or failure; the effect subscribes to remote data.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchVentas(controller.signal);
+    const refresh = () => { void fetchVentas(controller.signal); };
+    window.addEventListener('trackretail:ventas-updated', refresh);
 
     // Polling cada 30s con cleanup apropiado
     const interval = setInterval(() => {
-      fetchVentas(controller.signal);
+      if (document.visibilityState === 'visible') void fetchVentas(controller.signal);
     }, 30000);
 
     return () => {
+      window.removeEventListener('trackretail:ventas-updated', refresh);
       controller.abort(); // Cancela el fetch en vuelo al desmontar
       clearInterval(interval);
     };
@@ -80,7 +79,7 @@ export default function DashboardPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
         <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-          <span className="material-symbols-outlined text-primary text-[40px]">person_add</span>
+          <Icon className=" text-primary text-[40px]">person_add</Icon>
         </div>
         <h2 className="font-display-md text-display-md text-on-surface mb-2">¡Bienvenido!</h2>
         <p className="font-body-lg text-body-lg text-on-surface-variant max-w-md mb-8">
@@ -112,12 +111,17 @@ export default function DashboardPage() {
       </header>
 
       {error && (
-        <div className="text-red-400 bg-red-500/10 p-4 rounded-xl border border-red-500/20 mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-[18px]">error</span>
-          {error}
+        <div className="text-error bg-red-500/10 p-4 rounded-xl border border-red-500/20 mb-4 flex flex-wrap items-center gap-3">
+          <Icon className=" text-[18px]">error</Icon>
+          <div className="flex-1">
+            <p>{error}</p>
+            <p className="mt-1 text-sm">{ventas.length ? 'Se muestran los datos de la última carga correcta.' : 'Los totales no están disponibles hasta recuperar la conexión con la base de datos.'}</p>
+          </div>
+          <button type="button" className="border border-current rounded-lg px-3 py-2 shrink-0" onClick={() => { setLoading(true); void fetchVentas(new AbortController().signal); }}>Reintentar</button>
         </div>
       )}
 
+      {(!error || ventas.length > 0) && <>
       <DashboardCards ventas={ventas} />
 
       <section className="flex flex-col gap-4 mt-8">
@@ -142,7 +146,7 @@ export default function DashboardPage() {
                       <td className="p-4">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 rounded bg-surface-base flex items-center justify-center text-on-surface-variant group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                            <span className="material-symbols-outlined text-[14px]">receipt</span>
+                            <Icon className=" text-[14px]">receipt</Icon>
                           </div>
                           <span className="text-on-surface font-medium text-sm">{venta.folio}</span>
                         </div>
@@ -179,6 +183,7 @@ export default function DashboardPage() {
           <SimuladorComisiones ventas={ventas} />
         </div>
       </section>
+      </>}
     </>
   );
 }

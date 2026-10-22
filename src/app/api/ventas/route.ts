@@ -1,19 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getSupabase } from '@/lib/supabase';
 import { Venta } from '@/types/venta';
+import { saleError, normalizeSale, monthRange } from '@/lib/validation';
 
 // Solo columnas necesarias — evita traer datos extras de Supabase
-const VENTAS_SELECT = 'id,folio,fecha_compra,canal,valor_garantia,comision_calculada,tipo_garantia,anos_garantia,precio_producto,total_boleta,numero_pedido,vendedor_id';
+const VENTAS_SELECT = 'id,folio,fecha_compra,canal,valor_garantia,comision_calculada,tipo_garantia,anos_garantia,precio_producto,cantidad_unidades,total_boleta,numero_pedido,vendedor_id';
 
 export async function POST(req: NextRequest) {
   try {
-    const data = (await req.json()) as Venta;
+    let body: unknown;
+    try { body = await req.json(); }
+    catch { return NextResponse.json({ error: 'JSON inválido' }, { status: 400 }); }
+    const validationError = saleError(body);
+    if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
+    const data = normalizeSale(body as Venta);
 
-    if (!data.folio || !data.fecha_compra || !data.canal || !data.vendedor_id) {
-      return NextResponse.json({ error: 'Faltan campos obligatorios: folio, fecha_compra, canal, vendedor_id' }, { status: 400 });
-    }
-
-    const { data: insertedData, error } = await supabase
+    const { data: insertedData, error } = await getSupabase()
       .from('ventas')
       .insert([{
         folio: data.folio,
@@ -33,10 +35,17 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       if (error.code === '23505') {
+        const { data: existing, error: lookupError } = await getSupabase().from('ventas').select(VENTAS_SELECT)
+          .eq('folio', data.folio).eq('fecha_compra', data.fecha_compra).eq('canal', data.canal).single();
+        if (!lookupError && existing) {
+          const previous = normalizeSale(existing as Venta);
+          const fields: (keyof Venta)[] = ['folio', 'fecha_compra', 'canal', 'vendedor_id', 'precio_producto', 'cantidad_unidades', 'valor_garantia', 'total_boleta', 'tipo_garantia', 'anos_garantia', 'numero_pedido'];
+          if (fields.every(field => previous[field] === data[field])) return NextResponse.json(existing);
+        }
         return NextResponse.json({ error: 'Esta boleta ya fue ingresada (folio duplicado)' }, { status: 409 });
       }
       console.error('Supabase insert error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'No se pudo guardar la venta. Intenta nuevamente.' }, { status: 500 });
     }
 
     return NextResponse.json(insertedData);
@@ -53,34 +62,34 @@ export async function GET(req: NextRequest) {
     const vendedor_id = searchParams.get('vendedor_id');
     const mes = searchParams.get('mes');
 
-    if (!vendedor_id) {
+    if (!vendedor_id?.trim() || vendedor_id.length > 120) {
       return NextResponse.json({ error: 'Se requiere vendedor_id' }, { status: 400 });
     }
 
-    let query = supabase
+    const range = mes ? monthRange(mes) : null;
+    if (mes !== null && !range) return NextResponse.json({ error: 'Mes inválido. Usa YYYY-MM.' }, { status: 400 });
+
+    let query = getSupabase()
       .from('ventas')
       .select(VENTAS_SELECT)
       .eq('vendedor_id', vendedor_id)
       .order('fecha_compra', { ascending: false });
 
-    if (mes) {
-      const [year, month] = mes.split('-').map(Number);
-      const startDate = `${mes}-01`;
-      const endDate = new Date(year, month, 0).toISOString().split('T')[0];
-      query = query.gte('fecha_compra', startDate).lte('fecha_compra', endDate);
+    if (range) {
+      query = query.gte('fecha_compra', range.start).lte('fecha_compra', range.end);
     }
 
     const { data, error } = await query;
 
     if (error) {
       console.error('Supabase GET error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'No se pudieron cargar las ventas. Intenta nuevamente.' }, { status: 500 });
     }
 
     // Cache corto: 15s en el navegador, 30s en CDN — datos casi en tiempo real
     return NextResponse.json(data ?? [], {
       headers: {
-        'Cache-Control': 's-maxage=30, stale-while-revalidate=60',
+        'Cache-Control': 'private, no-store',
       },
     });
 

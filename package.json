@@ -6,16 +6,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --require ./tests/register.cjs --test tests/*.test.cjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.110.9",
     "lucide-react": "^1.27.0",
-    "next": "16.2.12",
+    "next": "16.4.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "xlsx": "^0.18.5"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
@@ -24,7 +26,7 @@
     "@types/react-dom": "^19",
     "autoprefixer": "^10.5.4",
     "eslint": "^9",
-    "eslint-config-next": "16.2.12",
+    "eslint-config-next": "16.4.2",
     "postcss": "^8.5.23",
     "tailwindcss": "^4.3.3",
     "typescript": "^5"

@@ -1,5 +1,5 @@
-const fs = require('fs');
-const http = require('http');
+import fs from 'node:fs';
+import http from 'node:http';
 
 const imgPath = 'C:/Users/victus/.gemini/antigravity/brain/5cd20a0a-ff58-4b3f-b5f4-1edbdd719fd2/.user_uploaded/media__1785282769759.png';
 const imgBytes = fs.readFileSync(imgPath);
