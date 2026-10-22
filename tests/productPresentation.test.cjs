@@ -8,6 +8,8 @@ test('standardizes category icons across product descriptions',()=>{
  assert.equal(productKind({category:'LAVADORAS',description:'LG'}),'laundry');
  assert.equal(productKind({category:'TELEFONIA',description:'MOTOROLA'}),'phone');
  assert.equal(productKind({category:'OTHER',description:'OTHER'}),'generic');
+ assert.notEqual(productKind({category:'COMEDOR',description:'COMEDOR DREAMS TOLEDO'}),'tv');
+ assert.notEqual(productKind({category:'SECADORES DE CABELLO',description:'SECADOR GAMA'}),'laundry');
 });
 test('accepts only matching product images on the ABC HTTPS host',()=>{
  assert.equal(extractProductImage('<meta property="og:image" content="https://www.abc.cl/images/29479976.jpg?sw=800&amp;sh=800">','29479976'),'https://www.abc.cl/images/29479976.jpg?sw=800&sh=800');

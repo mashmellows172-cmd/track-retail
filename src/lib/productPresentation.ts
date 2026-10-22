@@ -1,9 +1,9 @@
 export function productKind(product: {category:string;description:string}) {
   const text=`${product.category} ${product.description}`.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
-  if(/PANTALLA|TELEVIS|\bTV\b|OLED|QLED/.test(text)) return 'tv';
+  if(/PANTALLA|TELEVIS|\bTV\b|\bOLED\b|\bQLED\b/.test(text)) return 'tv';
   if(/NOTEBOOK|COMPUTA|LAPTOP|\bPC\b|TABLET/.test(text)) return 'computer';
   if(/REFRIG|MINIBAR|FREEZER|CONGELAD/.test(text)) return 'fridge';
-  if(/LAVAD|SECAD|SEMIAUTOMA|CENTRIFUG/.test(text)) return 'laundry';
+  if(/LAVADORA|LAVADO|SECADORA|SECAD_ROPA|SEMIAUTOMA|CENTRIFUG/.test(text)) return 'laundry';
   if(/TELEFON|CELULAR|SMARTPHONE/.test(text)) return 'phone';
   if(/COCINA|MICROONDA|HORNO|ENCIMERA/.test(text)) return 'kitchen';
   if(/ASPIRAD|ASP_POLVO/.test(text)) return 'cleaning';
