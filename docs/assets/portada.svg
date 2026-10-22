@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="280" viewBox="0 0 1200 280" role="img" aria-labelledby="title desc">
+  <title id="title">TrackRetail</title>
+  <desc id="desc">Boletas, garantías y comisiones en un solo lugar.</desc>
+  <rect width="1200" height="280" rx="24" fill="#141414"/>
+  <rect x="48" y="56" width="8" height="168" rx="4" fill="#e09270"/>
+  <text x="84" y="124" font-family="Arial, Helvetica, sans-serif" font-size="56" font-weight="700" fill="#f5f5f5">TrackRetail</text>
+  <text x="86" y="172" font-family="Arial, Helvetica, sans-serif" font-size="25" fill="#dedede">Boletas, garantías y comisiones en un solo lugar.</text>
+  <text x="86" y="216" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#e09270">Pensado para el trabajo diario en retail chileno</text>
+  <g transform="translate(940 58)" fill="none" stroke="#e09270" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M0 0h120v164l-15-10-15 10-15-10-15 10-15-10-15 10-15-10L0 164Z"/>
+    <path d="M25 36h70M25 60h70M25 84h35M25 126l20-20 20 10 30-32"/>
+  </g>
+</svg>
