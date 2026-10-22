@@ -1,4 +1,5 @@
 import type { StockSnapshot } from './stock';
+import {formatStockBarcode} from './stock';
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -13,7 +14,11 @@ export async function loadStock(): Promise<StockSnapshot | null> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction('snapshots', 'readonly');
     const request = tx.objectStore('snapshots').get('current');
-    tx.oncomplete = () => { db.close(); resolve(request.result || null); };
+    tx.oncomplete = () => {
+      db.close();
+      const snapshot=request.result as StockSnapshot | undefined;
+      resolve(snapshot ? {...snapshot,products:snapshot.products.map(p=>({...p,barcodes:[...new Set(p.barcodes.map(formatStockBarcode))]}))} : null);
+    };
     tx.onabort = () => { db.close(); reject(new Error('No se pudo leer el stock guardado.')); };
   });
 }

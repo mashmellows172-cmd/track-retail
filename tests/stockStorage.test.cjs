@@ -6,6 +6,7 @@ const snapshot=(date,price,store='10 MAIPU')=>({date,store,source:'synthetic.xls
 test('atomic stock loads preserve previous price and refuse older or other-store replacement',async()=>{
  assert.equal(await loadStock(),null);
  await saveStock(snapshot('2026-06-17',100000));
+ assert.equal((await loadStock()).products[0].barcodes[0],'0200012345678');
  await saveStock(snapshot('2026-06-18',80000));
  assert.equal((await loadStock()).products[0].previousPrice,100000);
  await saveStock(snapshot('2026-06-18',75000));

@@ -32,6 +32,8 @@ Si no ves una venta, comprueba el nombre seleccionado, el período y la conexió
 
 En **Catálogo**, pulsa **Cargar Excel** y selecciona el informe XLSX original de existencias. Revisa tienda, fecha y cantidad de productos antes de guardar. Los encabezados repetidos, códigos alternativos y filas repartidas entre celdas se procesan automáticamente. Los PLU repetidos no suman unidades.
 
+También se admiten informes separados en columnas. Si el archivo no trae Existencia física, ese dato aparece como no incluido; Disponible sigue siendo la cantidad usada. Los códigos alternativos sin PLU asociado se omiten con una advertencia, porque no se puede saber a qué producto corresponden. Los códigos internos se muestran con 13 dígitos, como `0200012345678`; la búsqueda acepta también `200012345678`. El PLU y el dígito final del código original no se modifican.
+
 El catálogo utiliza **Disponible**, que puede diferir de Existencia. Dos o más unidades sugieren venta en sala; una unidad requiere confirmar su estado. Cero unidades invita a consultar una alternativa online, sin asegurar que exista stock web. Las cantidades negativas se marcan para revisión.
 
 Usa los accesos por tipo de producto, área del informe, marca orientativa, precio o código. **Escanear producto para vender** abre la cámara y busca el código en el stock cargado. También puedes escribirlo manualmente. Consultar un producto no registra una venta.
