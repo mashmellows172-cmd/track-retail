@@ -1,10 +1,11 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ScanLine, Receipt } from 'lucide-react';
+import { LayoutDashboard, ScanLine, Receipt, Package } from 'lucide-react';
 
 const sections = [
   { href: '/', label: 'Inicio', icon: LayoutDashboard },
+  { href: '/catalogo', label: 'Catálogo', icon: Package },
   { href: '/registro', label: 'Registrar', icon: ScanLine },
   { href: '/historial', label: 'Historial', icon: Receipt },
 ];
@@ -12,7 +13,7 @@ const sections = [
 export default function AppNavigation({ mobile = false }: { mobile?: boolean }) {
   const pathname = usePathname();
   return <nav aria-label={mobile ? 'Navegación móvil' : 'Secciones de la aplicación'} className={mobile
-    ? 'md:hidden fixed bottom-0 left-0 right-0 z-50 grid grid-cols-3 gap-2 border-t border-surface-border bg-surface-elevated px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]'
+    ? 'md:hidden fixed bottom-0 left-0 right-0 z-50 grid grid-cols-4 gap-2 border-t border-surface-border bg-surface-elevated px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]'
     : 'flex-1 flex flex-col gap-2 px-4'}>
     {sections.map(({ href, label, icon: Glyph }) => {
       const active = pathname === href;

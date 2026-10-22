@@ -10,6 +10,7 @@ import { Venta } from '@/types/venta';
 import Link from 'next/link';
 import { useStoredString } from '@/hooks/useStoredString';
 import { chileDate } from '@/lib/validation';
+import CardCommissionsPanel from '@/components/CardCommissionsPanel';
 
 export default function DashboardPage() {
   const vendedor = useStoredString('trackretail_vendedor');
@@ -121,6 +122,7 @@ function SellerDashboard({ vendedor }: { vendedor: string | null }) {
         </div>
       )}
 
+      <CardCommissionsPanel key={vendedor} vendedor={vendedor} />
       {(!error || ventas.length > 0) && <>
       <DashboardCards ventas={ventas} />
 

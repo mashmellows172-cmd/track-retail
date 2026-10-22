@@ -6,7 +6,7 @@ import { useStoredString, storeString } from '@/hooks/useStoredString';
 
 export default function ThemeToggle() {
   const savedTheme = useStoredString('bryanapp_theme');
-  const isDark = savedTheme !== 'light';
+  const isDark = savedTheme === 'dark';
   useEffect(() => {
     // Check if user previously saved a preference
     document.documentElement.classList.toggle('dark', isDark);

@@ -28,7 +28,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: "#10131a",
+  themeColor: "#F5F5F7",
 };
 
 export default function RootLayout({
@@ -51,7 +51,7 @@ export default function RootLayout({
   ].join(' ');
 
   return (
-    <html lang="es" className="dark">
+    <html lang="es">
       <head>
         {/* Preconnect para reducir latencia de DNS/TLS con Google Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -63,8 +63,8 @@ export default function RootLayout({
           {/* Mobile Top Header (Hidden on Desktop) */}
           <div className="md:hidden flex flex-wrap items-center justify-between gap-3 p-4 border-b border-surface-border bg-surface-base sticky top-0 z-40">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-md bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
-                <Icon className=" text-background text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>insights</Icon>
+              <div className="w-8 h-8 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+                <Icon className=" text-on-secondary text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>insights</Icon>
               </div>
               <span className="font-headline-sm text-on-surface font-bold text-lg">BryanApp</span>
             </div>
@@ -78,9 +78,9 @@ export default function RootLayout({
           <aside className="hidden md:flex flex-col fixed left-4 top-4 bottom-4 w-64 rounded-xl border border-surface-border bg-surface-elevated py-8 z-50">
             {/* Logo */}
             <div className="px-6 mb-8 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center shrink-0">
                 <Icon
-                  className=" text-background"
+                  className=" text-on-secondary"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
                   insights

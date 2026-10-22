@@ -28,6 +28,24 @@ En **Historial**, selecciona mes y año para consultar las ventas del nombre act
 
 Si no ves una venta, comprueba el nombre seleccionado, el período y la conexión antes de volver a registrarla.
 
+## 5. Carga stock y consulta productos
+
+En **Catálogo**, pulsa **Cargar Excel** y selecciona el informe XLSX original de existencias. Revisa tienda, fecha y cantidad de productos antes de guardar. Los encabezados repetidos, códigos alternativos y filas repartidas entre celdas se procesan automáticamente. Los PLU repetidos no suman unidades.
+
+El catálogo utiliza **Disponible**, que puede diferir de Existencia. Dos o más unidades sugieren venta en sala; una unidad requiere confirmar su estado. Cero unidades invita a consultar una alternativa online, sin asegurar que exista stock web. Las cantidades negativas se marcan para revisión.
+
+Usa los accesos por tipo de producto, área del informe, marca orientativa, precio o código. **Escanear producto para vender** abre la cámara y busca el código en el stock cargado. También puedes escribirlo manualmente. Consultar un producto no registra una venta.
+
+Cada tipo tiene un icono genérico. En la ficha, **Obtener foto de referencia de ABC** intenta recuperar una foto que corresponda al PLU; si falla, se conserva el icono. La consulta no confirma características, disponibilidad online ni precio de garantía. El enlace permite comprobar esos datos en ABC.
+
+El stock se guarda solo en este navegador, sin subir el archivo ni los costos internos. Al cargar un día posterior de la misma tienda se conserva la carga previa para comparar precios. No se permite sustituirla por una fecha anterior ni otra tienda. Conserva tus archivos originales como respaldo.
+
+## 6. Registra comisiones por tarjetas
+
+En **Inicio**, configura el monto por apertura y el **total** por apertura y activación. Registra cada tarjeta una sola vez y marca la activación únicamente cuando ambas acciones hayan ocurrido el mismo día. El total activado ya incluye la apertura: no se suman ambos importes completos.
+
+Cada registro conserva las tarifas aplicadas aunque cambies los importes para tarjetas posteriores. El resumen y la exportación de tarjetas se filtran por mes. Los registros son locales al nombre y navegador activos; exporta el Excel para respaldarlos. No ingreses nombres, números de tarjeta ni datos de clientes.
+
 ## Si falla la conexión
 
 La aplicación intenta conservar las ventas pendientes en el navegador del dispositivo para reintentarlas posteriormente. No borres sus datos hasta comprobar que las boletas aparecen en el historial.

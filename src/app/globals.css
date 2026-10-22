@@ -12,22 +12,22 @@
     --color-inverse-primary: var(--color-primary-container);
     --color-on-error: #FFFFFF;
     /* Light Mode (Sleek Minimal) */
-    --color-background: #FAFAFA;
-    --color-surface-base: #FFFFFF;
+    --color-background: #F5F5F7;
+    --color-surface-base: #F7F7F9;
     --color-surface-elevated: #FFFFFF;
-    --color-surface-border: #E5E5E5;
-    --color-on-surface: #111827;
-    --color-on-surface-variant: #6B7280;
+    --color-surface-border: #DFDFE5;
+    --color-on-surface: #202024;
+    --color-on-surface-variant: #62626C;
     
-    --color-primary: #0F172A;
+    --color-primary: #A50034;
     --color-on-primary: #FFFFFF;
-    --color-primary-container: #F1F5F9;
-    --color-on-primary-container: #0F172A;
+    --color-primary-container: #FBEAF0;
+    --color-on-primary-container: #89002B;
     
-    --color-secondary: #B14E32;
+    --color-secondary: #A50034;
     --color-on-secondary: #FFFFFF;
-    --color-secondary-container: #FDE8E1;
-    --color-on-secondary-container: #9B3D20;
+    --color-secondary-container: #FBEAF0;
+    --color-on-secondary-container: #89002B;
     
     --color-tertiary: #047857;
     --color-error: #B91C1C;
@@ -35,22 +35,22 @@
   
   .dark {
     /* Dark Mode (Anthropic/Notion style) */
-    --color-background: #0F0F0F;
-    --color-surface-base: #141414;
-    --color-surface-elevated: #1B1B1B;
-    --color-surface-border: #2A2A2A;
-    --color-on-surface: #EDEDED;
-    --color-on-surface-variant: #A0A0A0;
+    --color-background: #141417;
+    --color-surface-base: #1B1B20;
+    --color-surface-elevated: #232329;
+    --color-surface-border: #3A3A43;
+    --color-on-surface: #F5F5F7;
+    --color-on-surface-variant: #B2B2BF;
     
-    --color-primary: #FFFFFF;
-    --color-on-primary: #000000;
-    --color-primary-container: #262626;
-    --color-on-primary-container: #FFFFFF;
+    --color-primary: #FF8AAF;
+    --color-on-primary: #300010;
+    --color-primary-container: #4B1730;
+    --color-on-primary-container: #FFD6E4;
     
-    --color-secondary: #E09270;
-    --color-on-secondary: #19110C;
-    --color-secondary-container: #4A2214;
-    --color-on-secondary-container: #FFD4C4;
+    --color-secondary: #FF8AAF;
+    --color-on-secondary: #300010;
+    --color-secondary-container: #4B1730;
+    --color-on-secondary-container: #FFD6E4;
     
     --color-tertiary: #10B981;
     --color-error: #F87171;
@@ -71,7 +71,7 @@ body {
   background-color: var(--color-surface-elevated);
   border: 1px solid var(--color-surface-border);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-  border-radius: 0.75rem;
+  border-radius: 1.5rem;
 }
 
 .dark .glass-card, .dark .glass-panel {
