@@ -24,6 +24,7 @@ Responde ÚNICAMENTE con este JSON (reemplaza los valores):
 {"folio":"...","fecha_compra":"YYYY-MM-DD","precio_producto":0,"cantidad_unidades":1,"valor_garantia":0,"total_boleta":0,"canal":"caja","numero_pedido":null}`;
 
 export async function POST(req: NextRequest) {
+  if (req.signal.aborted) return NextResponse.json({ error: 'Análisis cancelado.' }, { status: 499 });
   try {
     let formData: FormData;
     try { formData = await req.formData(); }
@@ -69,15 +70,16 @@ export async function POST(req: NextRequest) {
       // Reintento con backoff para absorber picos temporales 503 de Gemini
       for (let attempt = 0; attempt < 2; attempt++) {
         try {
+          req.signal.throwIfAborted();
           result = await model.generateContent([
             SYSTEM_PROMPT,
             { inlineData: { data: base64Image, mimeType } },
-          ]);
+          ], { signal: req.signal });
           break;
         } catch (err: unknown) {
           lastError = err;
           const msg = err instanceof Error ? err.message : '';
-          if (msg.includes('503') || msg.includes('high demand')) {
+          if (!req.signal.aborted && attempt === 0 && (msg.includes('503') || msg.includes('high demand'))) {
             await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
             continue;
           }
@@ -132,6 +134,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(receipt);
 
   } catch (error: unknown) {
+    if (req.signal.aborted) return NextResponse.json({ error: 'Análisis cancelado.' }, { status: 499 });
     const msg = error instanceof Error ? error.message : '';
     console.error('Error en /api/ocr: solicitud al proveedor fallida');
     

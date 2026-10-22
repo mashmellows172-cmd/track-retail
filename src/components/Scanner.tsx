@@ -1,230 +1,163 @@
 'use client';
 
 import Icon from '@/components/Icon';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { VentaOCR } from '@/types/venta';
 import { Haptics } from '@/lib/haptics';
+import { prepareReceiptImage, validateReceiptFile, validateReceiptSelection } from '@/lib/receiptImage';
 
 interface ScannerProps {
   onScanSuccess: (data: VentaOCR) => void;
   onManualEntry: () => void;
 }
 
-export default function Scanner({ onScanSuccess, onManualEntry }: ScannerProps) {
-  const [loading, setLoading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [loadingText, setLoadingText] = useState('');
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+type Selection = { file: File; preview: string | null };
 
-  const compressImage = async (file: File): Promise<File> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target?.result as string;
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const MAX = 1200;
-          if (width > height && width > MAX) { height *= MAX / width; width = MAX; }
-          else if (height > MAX) { width *= MAX / height; height = MAX; }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          canvas.toBlob((blob) => {
-            if (blob) resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
-            else reject(new Error('Error al comprimir'));
-          }, 'image/jpeg', 0.82);
-        };
-        img.onerror = reject;
-      };
-      reader.onerror = reject;
-    });
+export default function Scanner({ onScanSuccess, onManualEntry }: ScannerProps) {
+  const [selection, setSelection] = useState<Selection | null>(null);
+  const [stage, setStage] = useState<'ready' | 'preparing' | 'analyzing'>('ready');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [notice, setNotice] = useState('');
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const cameraInput = useRef<HTMLInputElement>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const previewUrl = useRef<string | null>(null);
+  const request = useRef<AbortController | null>(null);
+  const generation = useRef(0);
+  const mounted = useRef(true);
+  const busy = stage !== 'ready';
+
+  useEffect(() => {
+    const operationGeneration = generation;
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      operationGeneration.current++;
+      request.current?.abort();
+      if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
+    };
+  }, []);
+
+  const cancel = () => {
+    generation.current++;
+    request.current?.abort();
+    request.current = null;
+    setStage('ready');
+    setNotice('Análisis cancelado. Puedes volver a intentarlo.');
   };
 
-  const processFile = async (rawFile: File) => {
-    setLoading(true);
-    setProgress(10);
-    setLoadingText('Preparando imagen...');
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || request.current) return;
+    const error = validateReceiptSelection(file);
+    setErrorMsg(error);
+    if (error) return;
+    if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
+    const preview = file.type !== 'application/pdf' ? URL.createObjectURL(file) : null;
+    previewUrl.current = preview;
+    setSelection({ file, preview });
+    setPreviewFailed(false);
+    setNotice('Archivo listo. Revisa la boleta antes de analizar.');
+  };
+
+  const analyze = async () => {
+    if (!selection || request.current) return;
+    const controller = new AbortController();
+    request.current = controller;
+    const current = ++generation.current;
+    const active = () => mounted.current && current === generation.current;
+    let timedOut = false;
+    const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 65000);
     setErrorMsg(null);
+    setNotice('');
+    setStage('preparing');
     Haptics.medium();
-
     try {
-      let file = rawFile;
-
-      if (file.type.startsWith('image/') && file.size > 1024 * 1024) {
-        setProgress(30);
-        setLoadingText('Optimizando calidad...');
-        try { file = await compressImage(rawFile); }
-        catch { /* use original if compress fails */ }
-      }
-
-      if (file.size > 8 * 1024 * 1024) throw new Error('El archivo debe pesar como máximo 8 MB.');
-      if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(file.type)) throw new Error('Usa una imagen JPG, PNG, WebP o un PDF.');
-      setProgress(50);
-      setLoadingText('Analizando con IA...');
-
+      const file = await prepareReceiptImage(selection.file, controller.signal);
+      if (!active() || controller.signal.aborted) return;
+      const validation = validateReceiptFile(file);
+      if (validation) throw new Error(file.size > 8 * 1024 * 1024
+        ? 'La foto sigue superando 8 MB después de prepararla. Toma otra foto o elige una imagen de menor tamaño.'
+        : validation);
       const formData = new FormData();
       formData.append('image', file);
-
-      const res = await fetch('/api/ocr', { method: 'POST', body: formData, signal: AbortSignal.timeout(65000) });
-
-      setProgress(80);
-      setLoadingText('Extrayendo datos...');
-
-      const rawText = await res.text();
-      let data: VentaOCR;
-      try {
-        data = JSON.parse(rawText);
-      } catch {
-        throw new Error('La IA no pudo leer la boleta. Intenta con una foto más clara y sin sombras.');
-      }
-
-      if (!res.ok) {
-        throw new Error((data as unknown as { error?: string }).error || 'Error procesando la boleta.');
-      }
-
-      setProgress(100);
-      setLoadingText('¡Datos extraídos!');
+      setStage('analyzing');
+      const response = await fetch('/api/ocr', { method: 'POST', body: formData, signal: controller.signal });
+      const rawText = await response.text();
+      if (!active()) return;
+      let data: VentaOCR & { error?: string };
+      try { data = JSON.parse(rawText); }
+      catch { throw new Error('No pudimos leer la respuesta. Intenta otra vez o ingresa los datos manualmente.'); }
+      if (!response.ok) throw new Error(data?.error || 'No se pudo analizar la boleta. Intenta con una foto más clara.');
+      if (!data || typeof data !== 'object') throw new Error('No se encontraron datos. Prueba con otra foto.');
       Haptics.success();
-
-      setTimeout(() => {
-        setLoading(false);
-        onScanSuccess(data);
-      }, 700);
-
-    } catch (err: unknown) {
-      setLoading(false);
-      setErrorMsg(err instanceof Error ? err.message : 'Error de conexión. Revisa tu red.');
+      onScanSuccess(data);
+    } catch (error: unknown) {
+      if (!active()) return;
+      setErrorMsg(timedOut
+        ? 'El análisis tardó demasiado. Revisa tu conexión y vuelve a intentarlo.'
+        : error instanceof TypeError
+          ? 'No se pudo conectar. Revisa tu conexión y vuelve a intentarlo.'
+          : error instanceof Error ? error.message : 'No se pudo analizar la boleta. Vuelve a intentarlo.');
       Haptics.error();
+    } finally {
+      clearTimeout(timeout);
+      if (active()) {
+        request.current = null;
+        setStage('ready');
+      }
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) processFile(file);
-    e.target.value = ''; // allow re-selecting same file
-  };
+  const buttonStyle = 'min-h-12 rounded-xl px-4 py-3 font-label-md flex items-center justify-center gap-2 transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary disabled:opacity-50';
 
   return (
-    <div className="bg-surface-elevated border border-surface-border rounded-2xl p-6 md:p-8 shadow-sm">
-      <h2 className="font-headline-md text-headline-md text-on-surface mb-1">Escanear Boleta</h2>
-      <p className="font-body-md text-body-md text-on-surface-variant mb-6">
-        Sube la foto y la IA extraerá los datos automáticamente.
-      </p>
+    <section aria-labelledby="receipt-scanner-title" className="bg-surface-elevated border border-surface-border rounded-2xl p-6 md:p-8 shadow-sm">
+      <h2 id="receipt-scanner-title" className="font-headline-md text-headline-md text-on-surface mb-1">Escanear boleta</h2>
+      <p className="font-body-md text-body-md text-on-surface-variant mb-6">Toma una foto, revisa que se lea bien y analiza los datos.</p>
+      <input ref={cameraInput} type="file" accept="image/*" capture="environment" onChange={handleFileChange} disabled={busy} className="hidden" aria-label="Tomar foto de la boleta" />
+      <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,application/pdf" onChange={handleFileChange} disabled={busy} className="hidden" aria-label="Elegir imagen o PDF de la boleta" />
 
-      {/* Error inline — siempre visible */}
-      {errorMsg && (
-        <div role="alert" className="mb-6 bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex items-start gap-3">
-          <Icon className=" text-error text-[20px] mt-0.5 shrink-0">error</Icon>
-          <div className="flex-1">
-            <p className="font-label-md text-error mb-2">{errorMsg}</p>
-            <button
-              onClick={() => setErrorMsg(null)}
-              className="text-xs text-error underline hover:text-error"
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="flex flex-col gap-4">
-        {/* Opción 1: Cámara */}
-        <label className="block cursor-pointer">
-          <div className="bg-surface-base border border-surface-border rounded-xl p-4 hover:border-primary/50 transition-colors">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Icon className=" text-primary text-[20px]">photo_camera</Icon>
-              </div>
-              <div>
-                <p className="font-label-md text-on-surface">Tomar Foto</p>
-                <p className="font-label-sm text-on-surface-variant text-xs">Cámara trasera</p>
-              </div>
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleFileChange}
-              disabled={loading}
-              className="block w-full text-sm text-on-surface-variant
-                file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
-                file:text-sm file:font-medium file:bg-primary/10 file:text-primary
-                hover:file:bg-primary/20 cursor-pointer disabled:opacity-40"
-            />
-          </div>
-        </label>
-
-        {/* Opción 2: Galería */}
-        <label className="block cursor-pointer">
-          <div className="bg-surface-base border border-surface-border rounded-xl p-4 hover:border-secondary/50 transition-colors">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-9 h-9 rounded-lg bg-secondary/10 flex items-center justify-center">
-                <Icon className=" text-secondary text-[20px]">image</Icon>
-              </div>
-              <div>
-                <p className="font-label-md text-on-surface">Subir desde Galería</p>
-                <p className="font-label-sm text-on-surface-variant text-xs">Imagen o PDF</p>
-              </div>
-            </div>
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,application/pdf"
-              onChange={handleFileChange}
-              disabled={loading}
-              className="block w-full text-sm text-on-surface-variant
-                file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
-                file:text-sm file:font-medium file:bg-secondary/10 file:text-secondary
-                hover:file:bg-secondary/20 cursor-pointer disabled:opacity-40"
-            />
-          </div>
-        </label>
-
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-surface-border"></div>
-          <span className="text-on-surface-variant text-xs font-label-sm">O</span>
-          <div className="flex-1 h-px bg-surface-border"></div>
-        </div>
-
-        {/* Manual */}
-        <button
-          onClick={onManualEntry}
-          disabled={loading}
-          className="w-full border border-surface-border text-on-surface-variant py-3 rounded-xl font-label-md
-            flex items-center justify-center gap-2 hover:bg-surface-base hover:text-on-surface transition-colors disabled:opacity-40"
-        >
-          <Icon className=" text-[18px]">keyboard</Icon>
-          Ingresar datos manualmente
+      <div className="grid gap-3 sm:grid-cols-2">
+        <button type="button" disabled={busy} onClick={() => cameraInput.current?.click()} className={`${buttonStyle} bg-primary text-on-primary hover:bg-primary/90`}>
+          <Icon className="text-[22px]">photo_camera</Icon>{selection ? 'Volver a tomar foto' : 'Tomar foto'}
+        </button>
+        <button type="button" disabled={busy} onClick={() => fileInput.current?.click()} className={`${buttonStyle} border border-surface-border bg-surface-base text-on-surface hover:border-primary/50`}>
+          <Icon className="text-[22px]">upload_file</Icon>{selection ? 'Cambiar archivo' : 'Elegir imagen o PDF'}
         </button>
       </div>
+      <p className="text-sm text-on-surface-variant mt-3 mb-5">Incluye la boleta completa, con buena luz y sin sombras. Fotos JPG, PNG, WebP o HEIC/HEIF hasta 24 MB; PDF hasta 8 MB. Las fotos se preparan en tu dispositivo para enviar un máximo de 8 MB. HEIC/HEIF requiere un navegador que pueda convertirlo.</p>
 
-      {/* OVERLAY DE CARGA — PANTALLA COMPLETA */}
-      {loading && (
-        <div
-          style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(15,15,15,0.97)' }}
-          className="flex flex-col items-center justify-center px-8 text-center"
-        >
-          <div className="w-20 h-20 rounded-2xl bg-surface-elevated border border-surface-border flex items-center justify-center mb-6 shadow-xl">
-            <Loader2 className="animate-spin text-primary" size={40} />
-          </div>
-
-          {/* Progress bar */}
-          <div className="w-full max-w-xs h-2 bg-surface-base rounded-full overflow-hidden mb-3 border border-surface-border">
-            <div
-              className="h-full bg-gradient-to-r from-primary to-secondary rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-
-          <p className="text-on-surface font-bold text-lg mb-1">{progress}%</p>
-          <p role="status" className="text-on-surface-variant text-sm animate-pulse">{loadingText}</p>
+      {selection && (
+        <div className="rounded-2xl border border-surface-border bg-surface-base p-4 mb-4">
+          {selection.preview && !previewFailed ? (
+            <div className="max-h-80 overflow-auto rounded-xl bg-white mb-3">
+              {/* A local object URL preserves full receipt detail and supports scrolling. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img key={selection.preview} src={selection.preview} onError={() => { if (previewUrl.current === selection.preview) setPreviewFailed(true); }} alt="Vista previa de la boleta seleccionada" className="w-full h-auto" />
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 py-5 text-on-surface mb-3"><Icon className="text-primary text-[32px]">description</Icon><p>{previewFailed ? 'No se pudo mostrar la foto. Si no se puede analizar, elige una imagen JPG o usa «Tomar foto».' : 'PDF listo para analizar'}</p></div>
+          )}
+          <p className="text-sm font-medium text-on-surface break-all">{selection.file.name}</p>
+          <p className="text-sm text-on-surface-variant mt-1 mb-4">{(selection.file.size / (1024 * 1024)).toFixed(1)} MB · Al pulsar Analizar, se preparará el archivo y se enviará al servicio de IA si es compatible.</p>
+          {busy ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p role="status" className="flex items-center gap-2 text-on-surface"><Loader2 aria-hidden="true" size={20} className="animate-spin motion-reduce:animate-none text-primary" />{stage === 'preparing' ? 'Preparando imagen…' : 'Analizando boleta…'}</p>
+              <button type="button" onClick={cancel} className={`${buttonStyle} border border-surface-border text-on-surface`}>Cancelar</button>
+            </div>
+          ) : (
+            <button type="button" onClick={analyze} className={`${buttonStyle} w-full bg-primary text-on-primary hover:bg-primary/90`}><Icon className="text-[20px]">document_scanner</Icon>{errorMsg ? 'Reintentar análisis' : 'Analizar boleta'}</button>
+          )}
         </div>
       )}
-    </div>
+      {errorMsg && <p role="alert" className="rounded-xl border border-error/30 bg-error/10 text-error p-4 mb-4 text-sm">{errorMsg} {selection && 'Tu archivo sigue seleccionado.'}</p>}
+      <p role="status" className="text-sm text-on-surface-variant mb-4">{notice}</p>
+      <button type="button" onClick={() => { cancel(); onManualEntry(); }} className={`${buttonStyle} w-full border border-surface-border text-on-surface-variant hover:bg-surface-base hover:text-on-surface`}>
+        <Icon className="text-[20px]">keyboard</Icon>Ingresar datos manualmente
+      </button>
+    </section>
   );
 }

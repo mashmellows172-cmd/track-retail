@@ -1,6 +1,11 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { POST } = require('../src/app/api/ocr/route.ts');
+test('OCR does not process a request that was already canceled',async()=>{
+ const controller=new AbortController();controller.abort();
+ const request=new Request('http://localhost/api/ocr',{method:'POST',body:'canceled',signal:controller.signal});
+ assert.equal((await POST(request)).status,499);
+});
 test('OCR rejects a text field disguised as an upload', async () => {
   const form = new FormData(); form.set('image', 'not a file');
   assert.equal((await POST(new Request('http://localhost/api/ocr', { method: 'POST', body: form }))).status, 400);

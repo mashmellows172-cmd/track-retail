@@ -14,6 +14,8 @@ Entra en **Registrar Boleta** o pulsa el botón **+** en el celular. Puedes toma
 
 Para facilitar la lectura, fotografía la boleta completa, con buena luz y sin reflejos. Revisa los datos antes de confirmar: la lectura automática puede equivocarse.
 
+**Tomar foto** utiliza la cámara del teléfono; **Elegir imagen o PDF** abre tus archivos. Revisa la vista previa y pulsa **Analizar boleta** para enviarla a la IA. Puedes cancelar o reintentar sin volver a elegir la foto. Se admiten fotos de hasta 24 MB, que se preparan localmente para enviar un máximo de 8 MB; los PDF deben pesar como máximo 8 MB. HEIC/HEIF requiere que el navegador pueda convertirlo: si falla, utiliza JPG o **Tomar foto**.
+
 Presta atención al folio, la fecha, el precio del producto, el valor de la garantía y el total de la boleta. Selecciona el canal de venta, el tipo de producto y los años de garantía. Si corresponde a una venta por internet, revisa también el número de pedido.
 
 ## 3. Revisa tu rendimiento
@@ -37,6 +39,8 @@ También se admiten informes separados en columnas. Si el archivo no trae Existe
 El catálogo utiliza **Disponible**, que puede diferir de Existencia. Dos o más unidades sugieren venta en sala; una unidad requiere confirmar su estado. Cero unidades invita a consultar una alternativa online, sin asegurar que exista stock web. Las cantidades negativas se marcan para revisión.
 
 Usa los accesos por tipo de producto, área del informe, marca orientativa, precio o código. **Escanear producto para vender** abre la cámara y busca el código en el stock cargado. También puedes escribirlo manualmente. Consultar un producto no registra una venta.
+
+Permite la cámara, centra todas las barras y espera la lectura automática. El lector usa detección nativa cuando está disponible y un lector compatible como alternativa. La luz y el acercamiento aparecen solo si el dispositivo los admite. Al salir de la aplicación se pausa la cámara; pulsa **Reintentar cámara** al volver. La lectura de códigos se realiza en el dispositivo. Para probar desde Android o iPhone, abre la dirección HTTPS publicada; `localhost` en el teléfono corresponde al propio teléfono.
 
 Cada tipo tiene un icono genérico. En la ficha, **Obtener foto de referencia de ABC** intenta recuperar una foto que corresponda al PLU; si falla, se conserva el icono. La consulta no confirma características, disponibilidad online ni precio de garantía. El enlace permite comprobar esos datos en ABC.
 
