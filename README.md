@@ -1,53 +1,98 @@
-# TrackRetail / BryanApp
+![TrackRetail: boletas, garantías y comisiones en un solo lugar](docs/assets/portada.svg)
 
-Registro de boletas, seguimiento de garantías y estimación de comisiones para retail chileno. Next.js 16, React 19 y Supabase.
+# TrackRetail
 
-## Desarrollo
+**De la boleta al seguimiento de tus comisiones.**
 
-Usa Node.js 22 LTS o superior y npm.
+Una aplicación web para registrar ventas de garantías, consultar tu rendimiento y organizar el trabajo diario en retail chileno. Dentro de la aplicación también encontrarás el nombre **BryanApp**.
 
-```sh
-npm ci
-npm run dev
+[**Abrir la aplicación**](https://pinwin-mu.vercel.app) · [Guía de uso](docs/GUIA_DE_USO.md) · [Instalación](docs/CONFIGURACION.md) · [Reportar un problema](https://github.com/mashmellows172-cmd/track-retail/issues/new/choose)
+
+> **Estado: en desarrollo.** Consulta el [PR #1](https://github.com/mashmellows172-cmd/track-retail/pull/1) para conocer el estado de las mejoras de funcionamiento, seguridad y adaptación a dispositivos. Una rama de GitHub y la aplicación desplegada pueden tener versiones distintas.
+
+## ¿Qué puedes hacer?
+
+| Función | Para qué sirve |
+| --- | --- |
+| Escanear una boleta | Tomar una foto o subir un archivo para extraer sus datos con IA. |
+| Registrar manualmente | Ingresar o corregir los datos antes de confirmar una venta. |
+| Consultar el panel | Revisar comisiones, garantías, canales de venta y actividad reciente. |
+| Definir una meta | Seguir el avance de una meta mensual y explorar proyecciones. |
+| Revisar el historial | Filtrar las ventas por mes y año. |
+| Exportar a Excel | Descargar los registros del período para revisarlos fuera de la aplicación. |
+
+## Empieza a usarla
+
+1. Abre la [aplicación](https://pinwin-mu.vercel.app) y configura tu nombre.
+2. Entra en **Registrar Boleta** o pulsa **+** en el celular.
+3. Escanea, sube un archivo o elige el ingreso manual.
+4. Revisa folio, fecha, importes, canal y garantía antes de confirmar.
+5. Consulta el **Historial** y tu **Panel de Control**.
+
+```mermaid
+flowchart LR
+    A[Foto o ingreso manual] --> B[Revisión de datos]
+    B --> C[Registro de venta]
+    C --> D[Panel e historial]
+    D --> E[Exportación a Excel]
 ```
 
-Crea `.env.local` con estos valores de tu proyecto, sin publicar claves en Git:
+La IA puede equivocarse al leer una boleta: la revisión del formulario forma parte del registro. Las proyecciones dependen de las reglas configuradas; confirma los tramos con el responsable del negocio.
+
+[Ver la guía completa y preguntas frecuentes →](docs/GUIA_DE_USO.md)
+
+## Instalar en tu equipo
+
+Necesitas **Node.js 22 LTS**, npm, un proyecto de Supabase y una clave de Gemini para usar el escáner.
+
+```sh
+git clone https://github.com/mashmellows172-cmd/track-retail.git
+cd track-retail
+npm ci
+```
+
+Antes de arrancar, crea `.env.local` en la raíz:
 
 ```dotenv
 NEXT_PUBLIC_SUPABASE_URL=https://tu-proyecto.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-clave-publica
 GEMINI_API_KEY=tu-clave-de-servidor
-# Opcional: elegir explícitamente un modelo disponible en tu cuenta.
-GEMINI_MODEL=gemini-flash-latest
 ```
 
-`GEMINI_API_KEY` se usa únicamente en el servidor. Nunca uses una clave `service_role` de Supabase en variables `NEXT_PUBLIC_*`. La compilación y las pruebas no requieren credenciales reales. El escáner devuelve un error controlado si no hay clave; la entrada manual permanece disponible.
-
-El esquema inicial y los tramos existentes están en `database.sql`. Ejecútalo únicamente al preparar una base nueva; no es una migración idempotente para una base existente. Los importes y reglas comerciales deben confirmarse con el responsable del negocio antes de cambiarse. La comisión definitiva la calcula el trigger de Supabase; los simuladores reproducen la tabla configurada.
-
-## Validación
+Prepara las tablas siguiendo la [guía de configuración](docs/CONFIGURACION.md) y después ejecuta:
 
 ```sh
-npm test
-npm run lint
-npm run typecheck
-npm run build
-npm audit --omit=dev
+npm run dev
 ```
 
-GitHub Actions ejecuta estas comprobaciones en cada push y pull request, con permisos de lectura y acciones fijadas a commits. Las pruebas usan respuestas simuladas en el límite de la base de datos; no escriben ventas reales.
+Abre [localhost:3000](http://localhost:3000). Para una base existente, revisa y respalda los datos antes de ejecutar SQL: `database.sql` es un esquema inicial, no una migración de actualización.
 
-## Funcionamiento y límites
+## Tecnología
 
-- El nombre del vendedor se guarda localmente y filtra las ventas. **No es autenticación ni garantiza privacidad entre vendedores.** Se mantuvo este modelo por decisión del usuario. Antes de usar datos privados en un servicio público, implementar cuentas y políticas RLS; verificar las políticas del proyecto Supabase. Este repositorio no permite comprobar la configuración de una base remota.
-- Las boletas pendientes se guardan en el navegador del dispositivo. Se reintentan al abrir la app, recuperar conexión o pulsar el botón de reintento. No borres los datos del navegador antes de sincronizar. No hay un service worker que garantice abrir toda la aplicación sin conexión.
-- Una respuesta 409 conflictiva conserva la boleta pendiente. Reintentar exactamente una venta ya guardada devuelve el registro existente; diferencias de vendedor o contenido no se descartan.
-- Las fechas de negocio se calculan para `America/Santiago`. Los montos son pesos enteros no negativos. Telefonía admite 1–2 años y líneas duras 1–4.
-- El OCR acepta JPG, PNG, WebP y PDF de hasta 8 MB. La salida de IA se valida y siempre debe revisarse en el formulario; no garantiza que la lectura coincida con la boleta original.
-- Los iconos SVG se incluyen con la aplicación. El zoom está permitido y la interfaz respeta preferencias de movimiento reducido.
+- **Next.js y React:** aplicación web y rutas del servidor.
+- **TypeScript y Tailwind CSS:** tipos y estilos de la interfaz.
+- **Supabase / PostgreSQL:** almacenamiento y cálculo de comisiones.
+- **Google Gemini:** lectura automática de boletas.
+- **SheetJS:** exportación a Excel.
 
-## Dependencias
+El código de las páginas está en [`src/app`](src/app), los componentes en [`src/components`](src/components) y el esquema inicial en [`database.sql`](database.sql).
 
-Next.js se actualizó a 16.4.2 siguiendo los [avisos oficiales de seguridad](https://nextjs.org/blog/nextjs-security-update-october-14-2026). SheetJS 0.20.3 proviene del [CDN oficial del proyecto](https://docs.sheetjs.com/docs/getting-started/installation/frameworks/), porque el paquete `xlsx` del registro npm permanece en una versión antigua.
+## Datos y conexión
 
-La auditoría del 22 de octubre de 2026 no detectó vulnerabilidades en dependencias de producción. Quedan cinco alertas altas de desarrollo en la cadena `eslint-config-next → fast-glob → micromatch → braces`. npm solo propone una degradación incompatible del framework de lint; no se aplicó `--force`. Revisar actualizaciones de esa cadena periódicamente. La ausencia de alertas no equivale a una auditoría completa de seguridad.
+El nombre del vendedor se guarda en el navegador y permite seleccionar sus ventas. **No es una cuenta con contraseña ni garantiza privacidad entre vendedores.**
+
+La aplicación intenta conservar registros pendientes en el dispositivo cuando falla la conexión. No borres los datos del navegador hasta comprobar su sincronización en el historial. Esto no equivale a una copia de seguridad ni garantiza abrir toda la aplicación sin internet.
+
+Nunca publiques credenciales ni boletas con datos personales. Antes de usar datos privados en una instalación pública, revisa los controles de acceso y las políticas RLS de Supabase.
+
+[Consultar seguridad y tratamiento de datos →](SECURITY.md)
+
+## Colabora
+
+¿Encontraste un error o una forma de simplificar el trabajo? Usa las [plantillas de reportes y propuestas](https://github.com/mashmellows172-cmd/track-retail/issues/new/choose). Describe una situación concreta y utiliza datos ficticios.
+
+Para contribuir con código o documentación, consulta [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Mejoras y evolución
+
+El [PR #1](https://github.com/mashmellows172-cmd/track-retail/pull/1) reúne cambios de sincronización, validaciones, simuladores, accesibilidad y pruebas automáticas. Consulta su estado y el despliegue correspondiente para saber cuáles están disponibles en la aplicación.

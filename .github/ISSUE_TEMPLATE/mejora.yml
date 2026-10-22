@@ -1,0 +1,18 @@
+name: Proponer una mejora
+description: Cuéntanos qué facilitaría tu trabajo.
+title: "[Mejora]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: ¿Qué problema quieres resolver?
+      description: Describe una situación concreta de tu trabajo.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: ¿Cómo te gustaría que funcionara?
+      description: Incluye un ejemplo o una alternativa si la tienes.
+    validations:
+      required: true

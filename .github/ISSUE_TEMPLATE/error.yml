@@ -1,0 +1,37 @@
+name: Reportar un error
+description: Ayuda a reproducir un problema de la aplicación.
+title: "[Error]: "
+body:
+  - type: markdown
+    attributes:
+      value: "Usa datos ficticios. No incluyas claves ni boletas con datos personales. Para vulnerabilidades, consulta SECURITY.md."
+  - type: textarea
+    id: problem
+    attributes:
+      label: ¿Qué ocurrió?
+      description: Explica qué intentabas hacer y qué ocurrió realmente.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducirlo
+      placeholder: "1. Abrir…\n2. Pulsar…\n3. Observar…"
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: ¿Qué esperabas que ocurriera?
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Dispositivo y navegador
+      placeholder: "Ejemplo: Android, Chrome; Windows, Edge."
+  - type: textarea
+    id: context
+    attributes:
+      label: Información adicional
+      description: Puedes adjuntar capturas con los datos personales ocultos.
