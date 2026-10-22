@@ -1,4 +1,5 @@
 import Icon from '@/components/Icon';
+import AppNavigation from '@/components/AppNavigation';
 import type { Metadata, Viewport } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
@@ -104,29 +105,7 @@ export default function RootLayout({
             </div>
 
             {/* Nav Links */}
-            <nav className="flex-1 flex flex-col gap-1 px-2">
-              <Link
-                href="/"
-                className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-white/10 mx-2 rounded-lg hover:translate-x-1 transition-all duration-200"
-              >
-                <Icon className="text-[24px]">dashboard</Icon>
-                <span className="font-label-md text-label-md">Panel de Control</span>
-              </Link>
-              <Link
-                href="/registro"
-                className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-white/10 mx-2 rounded-lg hover:translate-x-1 transition-all duration-200"
-              >
-                <Icon className="text-[24px]">qr_code_scanner</Icon>
-                <span className="font-label-md text-label-md">Registrar Boleta</span>
-              </Link>
-              <Link
-                href="/historial"
-                className="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:text-on-surface hover:bg-white/10 mx-2 rounded-lg hover:translate-x-1 transition-all duration-200"
-              >
-                <Icon className="text-[24px]">receipt_long</Icon>
-                <span className="font-label-md text-label-md">Historial</span>
-              </Link>
-            </nav>
+            <AppNavigation />
 
             {/* User */}
             <div className="mt-auto px-4">
@@ -143,25 +122,7 @@ export default function RootLayout({
           </main>
 
           {/* Mobile Bottom Nav */}
-          <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-surface-elevated border-t border-surface-border z-50 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))] px-4 flex justify-around items-center">
-            <Link href="/" className="flex flex-col items-center gap-1 p-2 text-on-surface-variant hover:text-secondary transition-colors">
-              <Icon className="text-[24px]">dashboard</Icon>
-              <span className="font-label-sm text-[10px]">Inicio</span>
-            </Link>
-            <div className="relative -top-5">
-              <Link
-                href="/registro"
-                aria-label="Registrar boleta"
-                className="w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-primary-container text-on-primary-container flex items-center justify-center shadow-[0_0_20px_rgba(77,142,255,0.5)] border-2 border-surface-container"
-              >
-                <Icon className=" text-[28px]">add</Icon>
-              </Link>
-            </div>
-            <Link href="/historial" className="flex flex-col items-center gap-1 p-2 text-on-surface-variant hover:text-secondary transition-colors">
-              <Icon className="text-[24px]">receipt_long</Icon>
-              <span className="font-label-sm text-[10px]">Historial</span>
-            </Link>
-          </nav>
+          <AppNavigation mobile />
           <div className="md:hidden h-20 w-full" />
         </ErrorBoundary>
       </body>
