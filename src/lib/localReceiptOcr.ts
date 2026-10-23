@@ -18,9 +18,17 @@ export interface LocalOcrProgress {
   percent: number | null;
 }
 
+import type { ParsedPrintedReceipt } from '@/lib/receiptParser';
+import type { ReceiptLayout } from '@/lib/receiptParser';
+import { parsePrintedReceipt } from '@/lib/receiptParser';
+import { mergeRetryParsed, planReceiptRetry, receiptLayoutFromBlocks, retryPlanPixels } from '@/lib/receiptAnalysis';
+
 export interface LocalOcrResult {
   text: string;
   confidence: number | null;
+  layout?: ReceiptLayout;
+  parsed?: ParsedPrintedReceipt;
+  passCount?: number;
 }
 
 export interface LocalOcrLoggerMessage {
@@ -40,8 +48,8 @@ export interface LocalOcrWorker {
   recognize(
     image: Blob,
     options?: Record<string, unknown>,
-    output?: { text: boolean },
-  ): Promise<{ data: { text?: string; confidence?: number } }>;
+    output?: Record<string, unknown>,
+  ): Promise<{ data: { text?: string; confidence?: number; blocks?: unknown } }>;
   terminate(): Promise<unknown>;
 }
 
@@ -57,6 +65,8 @@ export interface LocalOcrOptions {
   timeoutMs?: number;
   assetBaseUrl?: string;
   createWorker?: LocalOcrWorkerFactory;
+  /** Prepared image dimensions used to normalize real engine layout boxes. */
+  imageSize?: { width: number; height: number };
 }
 
 export function localOcrAssetPaths(baseUrl: string) {
@@ -236,27 +246,80 @@ export async function recognizeReceiptLocally(
     if (!created) throw abortReason(controller.signal);
     controller.signal.throwIfAborted();
 
-    let recognized: { data: { text?: string; confidence?: number } };
-    try {
-      recognized = await raceWithAbort(
-        created.recognize(image, {}, { text: true }),
-        controller.signal,
-      );
-    } catch {
-      if (controller.signal.aborted) throw abortReason(controller.signal);
-      throw new LocalOcrError(
-        'recognize',
-        'No se pudo leer la boleta en este dispositivo. Conserva la foto, intenta con mejor luz o ingresa los datos manualmente.',
-      );
-    }
-    controller.signal.throwIfAborted();
+    type Recognized = { data: { text?: string; confidence?: number; blocks?: unknown } };
+    const recognizeOnce = async (blob: Blob, options: Record<string, unknown>, output: Record<string, unknown>): Promise<Recognized> => {
+      let recognized: Recognized;
+      try {
+        recognized = await raceWithAbort(
+          created.recognize(blob, options, output) as Promise<Recognized>,
+          controller.signal,
+        );
+      } catch {
+        if (controller.signal.aborted) throw abortReason(controller.signal);
+        throw new LocalOcrError(
+          'recognize',
+          'No se pudo leer la boleta en este dispositivo. Conserva la foto, intenta con mejor luz o ingresa los datos manualmente.',
+        );
+      }
+      controller.signal.throwIfAborted();
+      return recognized;
+    };
 
+    const recognized = await recognizeOnce(image, {}, { text: true, blocks: true });
     const text = typeof recognized?.data?.text === 'string' ? recognized.data.text : '';
     const rawConfidence = recognized?.data?.confidence;
     const confidence = typeof rawConfidence === 'number' && Number.isFinite(rawConfidence)
       ? rawConfidence
       : null;
-    return { text, confidence };
+    const baselineLayout = receiptLayoutFromBlocks(recognized?.data?.blocks, options.imageSize);
+    let parsed = parsePrintedReceipt(text, confidence, baselineLayout);
+    const layout: ReceiptLayout | undefined = baselineLayout ?? undefined;
+    let passCount = 1;
+
+    const plan = planReceiptRetry(parsed, layout ?? null);
+    if (plan) {
+      if (options.onProgress) {
+        try {
+          options.onProgress({ message: 'Releyendo la zona con dudas…', percent: null });
+        } catch {
+          // Progress listeners must never break recognition.
+        }
+      }
+      if (controller.signal.aborted) throw abortReason(controller.signal);
+      controller.signal.throwIfAborted();
+      try {
+        const retryRect = retryPlanPixels(plan.rect, options.imageSize ?? { width: 1000, height: 2000 });
+        if (controller.signal.aborted) throw abortReason(controller.signal);
+        controller.signal.throwIfAborted();
+        let retry: Recognized;
+        try {
+          retry = await raceWithAbort(
+            Promise.resolve(created.recognize(image, { rectangle: retryRect }, { text: true, blocks: false })) as Promise<Recognized>,
+            controller.signal,
+          );
+        } catch (e) {
+          if (controller.signal.aborted || externalSignal.aborted) throw abortReason(controller.signal);
+          throw e;
+        }
+        if (controller.signal.aborted) throw abortReason(controller.signal);
+        const retryText = typeof retry?.data?.text === 'string' ? retry.data.text : '';
+        const retryConfidence = typeof retry?.data?.confidence === 'number' && Number.isFinite(retry.data.confidence)
+          ? retry.data.confidence
+          : confidence;
+        const retryParsed = parsePrintedReceipt(retryText, retryConfidence, null);
+        parsed = mergeRetryParsed(parsed, retryParsed);
+        passCount = 2;
+      } catch (error) {
+        if (controller.signal.aborted || externalSignal.aborted) throw abortReason(controller.signal);
+        if (error instanceof LocalOcrError && error.code === 'cancelled') throw error;
+        if (error instanceof DOMException && error.name === 'AbortError') throw abortReason(controller.signal);
+        parsed = { ...parsed, warnings: [...parsed.warnings, 'No pudimos releer la zona con dudas; se conserva la lectura original.'] };
+        parsed = { ...parsed, warnings: [...parsed.warnings.filter(w=>!/segunda lectura/i.test(w)), 'No pudimos releer la zona con dudas; se conserva la lectura original.', 'La segunda lectura de la zona amplió campos pendientes. Confírmalos antes de continuar.'].filter((v,i,a)=>a.indexOf(v)===i) };
+        passCount = 2;
+      }
+    }
+
+    return { text, confidence, layout, parsed, passCount };
   } finally {
     clearTimeout(timer);
     externalSignal.removeEventListener('abort', forwardAbort);

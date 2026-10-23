@@ -90,7 +90,8 @@ test('la lectura local feliz usa español LSTM, rutas internas, progreso real y 
   assert.equal(stateInfo.oem, 1);
   assert.equal(stateInfo.options.workerBlobURL, false);
   assert.equal(stateInfo.options.workerPath, 'https://track.example/ocr/worker.min.js');
-  assert.deepEqual(result, { text: 'TOTAL $159.990', confidence: 82 });
+  assert.equal(result.text, 'TOTAL $159.990');
+  assert.equal(result.confidence, 82);
   assert.deepEqual(progress, [
     { message: 'Cargando idioma español…', percent: 0.4 },
     { message: 'Leyendo el texto de la boleta…', percent: 0.8 },

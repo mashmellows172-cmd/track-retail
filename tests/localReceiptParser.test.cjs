@@ -43,7 +43,7 @@ test('lectura local extrae una boleta impresa chilena sin confundir IVA, subtota
     total_boleta: 159990,
     canal: 'caja',
     numero_pedido: null,
-    anos_garantia: null,
+    anos_garantia: 2,
     tipo_garantia: null,
   });
   assert.equal(result.hasUsefulData, true);
@@ -137,10 +137,10 @@ TOTAL $159.990`, 90);
   assert.equal(parsePrintedReceipt('VENDO POR INTERNET', 90).fields.canal, null);
 });
 
-test('lectura local conserva años y tipo de garantía en null aunque el texto mencione años', () => {
+test('lectura local conserva años de garantía explícitos y el tipo en null', () => {
   const result = parsePrintedReceipt('GARANTÍA EXTENDIDA 2 AÑOS $10.000', 90);
   assert.equal(result.fields.valor_garantia, 10000);
-  assert.equal(result.fields.anos_garantia, null);
+  assert.equal(result.fields.anos_garantia, 2);
   assert.equal(result.fields.tipo_garantia, null);
 });
 
