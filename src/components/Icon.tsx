@@ -1,4 +1,4 @@
-import { Activity, CircleAlert, Calculator, Camera, CircleCheck, CircleDollarSign, Cloud, Download, FileText, Gift, Image, Info, Keyboard, LayoutDashboard, Pencil, Plus, Receipt, ScanLine, Shield, ShoppingCart, Smartphone, TrendingUp, TriangleAlert, Upload, User, UserPlus, X, ZoomIn } from 'lucide-react';
+import { Activity, CircleAlert, Calculator, Camera, ChevronDown, CircleCheck, CircleDollarSign, Cloud, Download, Eye, FileText, Flag, Gift, Image, Info, Keyboard, LayoutDashboard, Pencil, Plus, Receipt, RotateCcw, RotateCw, ScanLine, ScanText, Shield, ShoppingCart, SlidersHorizontal, Smartphone, TrendingUp, TriangleAlert, Upload, User, UserPlus, X, ZoomIn } from 'lucide-react';
 import type { CSSProperties } from 'react';
 
 const icons = {
@@ -9,6 +9,8 @@ const icons = {
   shield: Shield, shopping_cart: ShoppingCart, trending_up: TrendingUp, warning: TriangleAlert,
   person: User, person_add: UserPlus, cloud: Cloud, smartphone: Smartphone,
   upload_file: Upload, description: FileText, zoom_in: ZoomIn, close: X,
+  tune: SlidersHorizontal, expand_more: ChevronDown, rotate_90_degrees_cw: RotateCw,
+  restart_alt: RotateCcw, preview: Eye, flag: Flag, subject: ScanText, notes: FileText,
 };
 
 /** Local SVGs keep controls recognizable when external fonts are unavailable. */
