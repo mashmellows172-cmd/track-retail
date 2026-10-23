@@ -8,6 +8,8 @@ Las ventas registradas se almacenan en Supabase; los pendientes y preferencias p
 
 ## Credenciales y boletas
 
+La lectura local predeterminada procesa fotos en el navegador y descarga solo el motor y su idioma desde la aplicación. No envía fotos ni texto al servicio de IA. Si eliges la nube, la foto sí se envía al servidor y a los proveedores configurados; un respaldo puede enviarla a un segundo proveedor. Revisa sus condiciones de datos. La nube no se activa automáticamente por un fallo local.
+
 - Mantén `GEMINI_API_KEY` únicamente en el servidor.
 - Nunca publiques claves `service_role` ni las uses en variables `NEXT_PUBLIC_*`.
 - No adjuntes boletas reales, datos personales ni secretos a reportes de errores.

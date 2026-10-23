@@ -6,6 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "predev": "npm run ocr:assets",
+    "prebuild": "npm run ocr:assets",
+    "ocr:assets": "node scripts/copy-ocr-assets.cjs",
     "lint": "eslint",
     "test": "node --require ./tests/register.cjs --test tests/*.test.cjs",
     "typecheck": "tsc --noEmit"
@@ -13,11 +16,14 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.110.9",
+    "@tesseract.js-data/spa": "1.0.0",
     "@zxing/browser": "^0.2.1",
     "lucide-react": "^1.27.0",
     "next": "16.4.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "tesseract.js": "7.0.0",
+    "tesseract.js-core": "7.0.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {

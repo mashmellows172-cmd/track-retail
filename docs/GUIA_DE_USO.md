@@ -14,7 +14,7 @@ Entra en **Registrar Boleta** o pulsa el botón **+** en el celular. Puedes toma
 
 Para facilitar la lectura, fotografía la boleta completa, con buena luz y sin reflejos. Revisa los datos antes de confirmar: la lectura automática puede equivocarse.
 
-**Tomar foto** utiliza la cámara del teléfono; **Elegir imagen o PDF** abre tus archivos. La vista previa muestra la foto completa; **Ampliar foto** permite revisarla en un diálogo. Revisa la imagen y pulsa **Analizar boleta** para enviarla a la IA. Puedes cancelar o reintentar sin volver a elegir la foto. Se admiten fotos de hasta 24 MB, que se preparan localmente para enviar un máximo de 8 MB; los PDF deben pesar como máximo 8 MB. HEIC/HEIF requiere que el navegador pueda convertirlo: si falla, utiliza JPG o **Tomar foto**.
+**Tomar foto** utiliza la cámara del teléfono; **Elegir imagen o PDF** abre tus archivos. La vista previa muestra la foto completa; **Ampliar foto** permite revisarla en un diálogo. El modo local predeterminado analiza la foto en tu dispositivo, sin enviarla a un proveedor de IA. Revisa la imagen e inicia el análisis. Solo la nube elegida expresamente envía la foto. Puedes cancelar o reintentar sin volver a elegir la foto. Se admiten fotos de hasta 24 MB, que se preparan localmente; el límite de archivo preparado es de 8 MB; los PDF deben pesar como máximo 8 MB y requieren ingreso manual o nube opcional. HEIC/HEIF requiere que el navegador pueda convertirlo: si falla, utiliza JPG o **Tomar foto**.
 
 Presta atención al folio, la fecha, el precio del producto, el valor de la garantía y el total de la boleta. Selecciona el canal de venta, el tipo de producto y los años de garantía. Si corresponde a una venta por internet, revisa también el número de pedido.
 

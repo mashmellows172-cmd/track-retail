@@ -6,7 +6,7 @@
 
 - Node.js 22 LTS y npm.
 - Un proyecto de Supabase para almacenar ventas y calcular comisiones.
-- Una clave de un proveedor visual compatible para la lectura automática de boletas. Gemini conserva compatibilidad; también se admiten Qwen, DeepSeek y Grok.
+- La lectura local no requiere claves. Solo la nube opcional necesita una clave de Gemini, Qwen, DeepSeek o Grok.
 
 ## Instalación
 

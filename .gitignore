@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# generated OCR assets (recreated from pinned npm packages by npm run ocr:assets)
+/public/ocr/
+
 # production
 /build
 

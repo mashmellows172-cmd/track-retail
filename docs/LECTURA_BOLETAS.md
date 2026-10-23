@@ -1,6 +1,10 @@
-# Lectura de boletas: proveedores y evaluación
+# Lectura de boletas: motor local y nube opcional
 
-## Decisión inicial
+## Modo predeterminado gratuito
+
+La lectura predeterminada utiliza Tesseract.js en el navegador, sin claves ni costo por llamada API. La foto permanece en el dispositivo. Consulta la [guía de lectura local](LECTURA_LOCAL.md). No existe cambio automático a la nube si falla: debes elegirla expresamente.
+
+## Evaluación de la nube opcional
 
 El error recurrente «servidores saturados» corresponde a disponibilidad del proveedor. Cambiar el encuadre no soluciona ese error. El motor admite proveedores independientes y un respaldo secuencial: primero intenta uno y solo envía al segundo si falla o devuelve datos inválidos. Máximo dos llamadas, 22 segundos por proveedor, cancelación conectada y revisión humana antes de guardar.
 

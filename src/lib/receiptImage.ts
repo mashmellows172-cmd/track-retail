@@ -1,6 +1,6 @@
-export function receiptDimensions(width: number, height: number) {
+export function receiptDimensions(width: number, height: number, maxPixels = 16_000_000) {
   // Keep long receipt text readable: constrain the short edge independently.
-  const scale = Math.min(1, 2400 / Math.min(width, height), 12000 / Math.max(width, height), Math.sqrt(16000000 / (width * height)));
+  const scale = Math.min(1, 2400 / Math.min(width, height), 12000 / Math.max(width, height), Math.sqrt(maxPixels / (width * height)));
   return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
 }
 
@@ -27,10 +27,12 @@ export function validateReceiptFile(file: Pick<File, 'type' | 'size'>): string |
   return null;
 }
 
-export async function prepareReceiptImage(file: File, signal: AbortSignal): Promise<File> {
+export async function prepareReceiptImage(file: File, signal: AbortSignal, maxPixels?: number): Promise<File> {
   signal.throwIfAborted();
   const requiresConversion = isHeic(file);
-  if (!requiresConversion && (!file.type.startsWith('image/') || file.size <= 1024 * 1024)) return file;
+  // Local OCR always decodes so a compressed phone photo cannot bypass the
+  // lower in-browser memory budget. Cloud preparation keeps its old shortcut.
+  if (maxPixels === undefined && !requiresConversion && (!file.type.startsWith('image/') || file.size <= 1024 * 1024)) return file;
 
   return new Promise((resolve, reject) => {
     const url = URL.createObjectURL(file);
@@ -45,6 +47,7 @@ export async function prepareReceiptImage(file: File, signal: AbortSignal): Prom
     const unavailable = () => {
       cleanup();
       if (requiresConversion) reject(new Error('Este navegador no pudo convertir la foto HEIC/HEIF. Elige una imagen JPG o usa «Tomar foto» para capturar otra boleta.'));
+      else if (maxPixels !== undefined) reject(new Error('Este navegador no pudo preparar la foto para la lectura local. Elige otra imagen JPG o usa «Tomar foto» para capturar otra boleta.'));
       else resolve(file);
     };
     signal.addEventListener('abort', abort, { once: true });
@@ -52,7 +55,7 @@ export async function prepareReceiptImage(file: File, signal: AbortSignal): Prom
     image.onload = () => {
       if (signal.aborted) { abort(); return; }
       try {
-        const { width, height } = receiptDimensions(image.naturalWidth, image.naturalHeight);
+        const { width, height } = receiptDimensions(image.naturalWidth, image.naturalHeight, maxPixels);
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
@@ -67,8 +70,8 @@ export async function prepareReceiptImage(file: File, signal: AbortSignal): Prom
           canvas.height = 0;
           cleanup();
           if (signal.aborted) { reject(signal.reason); return; }
-          if (!blob && requiresConversion) { unavailable(); return; }
-          resolve(blob && (requiresConversion || blob.size < file.size)
+          if (!blob && (requiresConversion || maxPixels !== undefined)) { unavailable(); return; }
+          resolve(blob && (requiresConversion || maxPixels !== undefined || blob.size < file.size)
             ? new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg', lastModified: file.lastModified })
             : file);
         }, 'image/jpeg', 0.92);
