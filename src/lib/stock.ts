@@ -5,6 +5,11 @@ export interface StockProduct {
 export interface StockSnapshot {
   date: string; store: string; products: StockProduct[]; importedAt: string; source: string; warnings?: string[];
 }
+export function stockQuantityWarning(available: number, quantity: number | null): string | null {
+  return Number.isSafeInteger(available) && available > 0 && quantity !== null && Number.isSafeInteger(quantity) && quantity > available
+    ? `Solicitas ${quantity} unidades y el informe indica ${available}. Confirma las unidades antes de ofrecer esta cantidad; no se reserva stock ni se confirma disponibilidad web.`
+    : null;
+}
 export function channelAdvice(available: number) {
   return available < 0 ? 'incidencia' : available === 0 ? 'consultar_web' : available === 1 ? 'verificar' : 'sala';
 }

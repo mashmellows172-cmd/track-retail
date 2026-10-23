@@ -1,6 +1,7 @@
 'use client';
 
 import Icon from '@/components/Icon';
+import ReceiptReaderStatus from '@/components/ReceiptReaderStatus';
 import { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { VentaOCR } from '@/types/venta';
@@ -118,6 +119,7 @@ export default function Scanner({ onScanSuccess, onManualEntry }: ScannerProps) 
     <section aria-labelledby="receipt-scanner-title" className="bg-surface-elevated border border-surface-border rounded-2xl p-6 md:p-8 shadow-sm">
       <h2 id="receipt-scanner-title" className="font-headline-md text-headline-md text-on-surface mb-1">Escanear boleta</h2>
       <p className="font-body-md text-body-md text-on-surface-variant mb-6">Toma una foto, revisa que se lea bien y analiza los datos.</p>
+      <ReceiptReaderStatus />
       <input ref={cameraInput} type="file" accept="image/*" capture="environment" onChange={handleFileChange} disabled={busy} className="hidden" aria-label="Tomar foto de la boleta" />
       <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,application/pdf" onChange={handleFileChange} disabled={busy} className="hidden" aria-label="Elegir imagen o PDF de la boleta" />
 

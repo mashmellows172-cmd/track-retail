@@ -5,55 +5,34 @@ import { useState } from 'react';
 import { VentaOCR, Venta } from '@/types/venta';
 import { useToast } from '@/components/ToastProvider';
 import { Haptics } from '@/lib/haptics';
-import { chileDate, saleError } from '@/lib/validation';
-import { parseSaleDraft } from '@/lib/draft';
+import { saleError } from '@/lib/validation';
+import type { SaleDraft } from '@/lib/draft';
+import { clearSaleDraft, initialSaleDraft, persistSaleDraft } from '@/lib/guidedSale';
 
 interface ConfirmacionFormProps {
   initialData: VentaOCR;
+  /** Explicitly chosen draft. The form never reads storage during initialization. */
+  initialDraft?: SaleDraft | null;
+  /** Product reference shown as context only; it is not saved with the sale. */
+  productContext?: { plu: string; name: string } | null;
   onConfirm: (data: Omit<Venta, 'id' | 'created_at' | 'comision_calculada'>) => Promise<void>;
   onCancel: () => void;
+  /** Called only after the edited draft was persisted successfully. */
+  onDraftSaved?: (draft: SaleDraft) => void;
 }
 
 const inputClass = 'w-full bg-surface-base border border-surface-border rounded-lg p-2.5 text-on-surface focus:border-primary/60 focus:ring-1 focus:ring-primary/30 outline-none transition-colors font-body-md text-body-md';
 const labelClass = 'block font-label-sm text-label-sm text-on-surface-variant mb-1.5';
 
-export default function ConfirmacionForm({ initialData, onConfirm, onCancel }: ConfirmacionFormProps) {
-  const sanitizeNumber = (val: unknown): number => {
-    if (typeof val === 'number') return Number.isSafeInteger(val) && val >= 0 ? val : 0;
-    if (!val) return 0;
-    const str = String(val).replace(/[^0-9]/g, '');
-    return Number(str);
-  };
-
-  const [formData, setFormData] = useState(() => {
-    // Si es ingreso manual (folio vacío), intentar recuperar borrador
-    if (!initialData.folio) {
-      try {
-        const savedDraft = sessionStorage.getItem('trackretail_draft_venta');
-        if (savedDraft) {
-          const parsed = parseSaleDraft(JSON.parse(savedDraft));
-          if (parsed) return parsed;
-        }
-      } catch { /* Continue with the receipt when storage is unavailable. */ }
-    }
-    
-    // Si es OCR o no hay borrador, sanear los datos de la IA
-    return {
-      folio: initialData.folio || '',
-      fecha_compra: initialData.fecha_compra || chileDate(),
-      canal: (initialData.canal || 'caja') as 'caja' | 'internet',
-      precio_producto: sanitizeNumber(initialData.precio_producto),
-      cantidad_unidades: sanitizeNumber(initialData.cantidad_unidades) || 1,
-      valor_garantia: sanitizeNumber(initialData.valor_garantia),
-      total_boleta: sanitizeNumber(initialData.total_boleta),
-      numero_pedido: initialData.numero_pedido || '',
-      anos_garantia: (sanitizeNumber(initialData.anos_garantia) || 1) as 1 | 2 | 3 | 4,
-      tipo_garantia: 'telefonia' as 'telefonia' | 'lineas_duras',
-      vendedor_id: '',
-    };
+export default function ConfirmacionForm({ initialData, initialDraft = null, productContext = null, onConfirm, onCancel, onDraftSaved }: ConfirmacionFormProps) {
+  const [formData, setFormData] = useState<SaleDraft>(() => {
+    // Only an explicit draft choice restores storage. Manual entry and guided
+    // proposals must never pick up an unrelated draft by accident.
+    return initialDraft ?? initialSaleDraft(initialData);
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [draftSaveError, setDraftSaveError] = useState(false);
   const { showToast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,7 +57,7 @@ export default function ConfirmacionForm({ initialData, onConfirm, onCancel }: C
     if (validationError) { showToast(validationError, 'error'); setIsSubmitting(false); return; }
     try {
       await onConfirm({ ...formData, vendedor_id: savedVendedor });
-      try { sessionStorage.removeItem('trackretail_draft_venta'); } catch { /* Sale already saved. */ }
+      clearSaleDraft();
     } catch (error: unknown) {
       const errorMsg = error instanceof Error ? error.message : 'Error desconocido al guardar';
       showToast(errorMsg, 'error');
@@ -91,22 +70,32 @@ export default function ConfirmacionForm({ initialData, onConfirm, onCancel }: C
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     const numFields = ['precio_producto', 'cantidad_unidades', 'valor_garantia', 'total_boleta', 'anos_garantia'];
-    const next = {
+    const next: SaleDraft = {
       ...formData,
       [name]: numFields.includes(name) ? Number(value) : value,
       ...(name === 'tipo_garantia' && value === 'telefonia' && formData.anos_garantia > 2 ? { anos_garantia: 2 as const } : {}),
     };
     setFormData(next);
-    try { sessionStorage.setItem('trackretail_draft_venta', JSON.stringify(next)); }
-    catch { /* Manual submission still works without draft storage. */ }
+    const saved = persistSaleDraft(next);
+    setDraftSaveError(!saved);
+    if (saved) onDraftSaved?.(next);
   };
 
   return (
     <form onSubmit={handleSubmit} className="bg-surface-elevated border border-surface-border rounded-2xl p-4 sm:p-6 shadow-sm">
       <h2 className="font-headline-md text-headline-md text-on-surface mb-1">Confirmar Datos</h2>
+      {draftSaveError && <p role="alert" className="my-3 rounded-xl border border-error/40 bg-error/10 p-3 text-sm">Los cambios están en pantalla, pero no se pudo actualizar el borrador. Conserva estos datos antes de salir.</p>}
       <p className="font-label-md text-label-md text-on-surface-variant mb-6">
         Revisa los datos antes de guardar la venta.
       </p>
+
+      {productContext && (
+        <div className="mb-6 rounded-xl border border-secondary/30 bg-secondary/5 p-4">
+          <p className="font-label-sm text-label-sm text-secondary font-semibold">Producto seleccionado en el catálogo</p>
+          <p className="font-semibold text-on-surface mt-1 break-words">{productContext.name}</p>
+          <p className="text-sm text-on-surface-variant mt-1">PLU {productContext.plu} · Contexto para identificar la venta; no se guarda como dato de la boleta.</p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>

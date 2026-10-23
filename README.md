@@ -15,6 +15,7 @@ Una aplicación web para registrar ventas de garantías, consultar tu rendimient
 | Función | Para qué sirve |
 | --- | --- |
 | Escanear una boleta | Tomar una foto o subir un archivo para extraer sus datos con IA. |
+| Preparar una venta | Abrir un producto del catálogo, revisar stock y estimar total y comisión de garantía antes del registro. |
 | Registrar manualmente | Ingresar o corregir los datos antes de confirmar una venta. |
 | Consultar el panel | Revisar comisiones, garantías, canales de venta y actividad reciente. |
 | Definir una meta | Seguir el avance de una meta mensual y explorar proyecciones. |

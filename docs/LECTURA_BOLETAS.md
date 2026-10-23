@@ -57,3 +57,37 @@ Las pruebas automatizadas actuales simulan respuestas: cubren saturación, respa
 - [DeepSeek JSON](https://api-docs.deepseek.com/guides/json_mode/)
 - [DeepSeek: desactivar razonamiento](https://api-docs.deepseek.com/guides/thinking_mode/)
 - [Grok: imágenes y formatos](https://docs.x.ai/developers/model-capabilities/images/understanding)
+
+## Comparación local reproducible
+
+El script `scripts/benchmark-ocr.cjs` permite medir cada proveedor por separado, sin respaldo que oculte fallos. Requiere Node, dependencias de desarrollo y variables API exportadas en el proceso. No carga archivos de credenciales ni imprime contenido de boletas. **Sí envía las fotos a cada proveedor configurado y puede generar cargos** al ejecutarlo con confirmación explícita.
+
+Guarda un `manifest.json` fuera del repositorio, con fotos anonimizadas en la misma carpeta:
+
+```json
+[
+  {
+    "image": "ejemplo.jpg",
+    "expected": {
+      "folio": "12345678",
+      "fecha_compra": "2026-10-23",
+      "precio_producto": 10000,
+      "cantidad_unidades": 1,
+      "valor_garantia": 5000,
+      "total_boleta": 15000,
+      "canal": "caja",
+      "numero_pedido": null
+    }
+  }
+]
+```
+
+Ejecuta desde el proyecto:
+
+```sh
+node --require ./tests/register.cjs scripts/benchmark-ocr.cjs /ruta/manifest.json --confirm-anonymized
+```
+
+Admite 1–50 fotos JPG/PNG de hasta 4 MB. Valida la lista completa antes de llamar servicios. Produce una línea por proveedor con errores, exactitud de campos, mediana y percentil 95 de tiempo. Los intentos fallidos cuentan como campos incorrectos. No mide costo: consulta la facturación del proveedor. No se han ejecutado comparaciones externas sin claves ni fotos anonimizadas seleccionadas para esa prueba.
+
+La pantalla de captura muestra la configuración del lector y si hay respaldo para JPG/PNG. Esto no es una prueba en vivo de disponibilidad; un servicio configurado puede estar saturado.

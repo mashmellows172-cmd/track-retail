@@ -8,6 +8,7 @@ export interface VentaOCR {
   canal: 'caja' | 'internet' | null;
   numero_pedido: string | null;
   anos_garantia?: number | null;
+  tipo_garantia?: 'telefonia' | 'lineas_duras' | null;
 }
 
 export interface Venta extends VentaOCR {

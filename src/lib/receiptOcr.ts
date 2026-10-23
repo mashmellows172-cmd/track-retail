@@ -11,6 +11,10 @@ export function configuredProviders(env: Record<string, string | undefined>): Re
   const order = (env.OCR_PROVIDERS ?? 'qwen,deepseek,gemini,grok').split(',').map(p => p.trim());
   return [...new Set(order.filter((p): p is ReceiptProvider => Object.hasOwn(keys, p) && !!env[keys[p as ReceiptProvider]]))];
 }
+export function ocrReadiness(env: Record<string, string | undefined>) {
+  const providers = configuredProviders(env);
+  return { providers, imageBackup: providers.length > 1, pdfSupported: providers.includes('gemini') };
+}
 export function parseReceipt(text: string): VentaOCR {
   // Strip any markdown wrappers the model may add despite instructions.
   let parsed: VentaOCR;

@@ -71,3 +71,11 @@ La cola local no sustituye una copia de seguridad y no garantiza que puedas abri
 **¿Dónde informo un problema?** Abre un [reporte](https://github.com/mashmellows172-cmd/track-retail/issues/new/choose) con pasos para reproducirlo y datos ficticios. Evita adjuntar boletas con datos personales.
 
 Puedes consultar el estado de las mejoras de sincronización, validación y accesibilidad en el [PR #1](https://github.com/mashmellows172-cmd/track-retail/pull/1). La versión desplegada puede diferir de la rama que estás leyendo.
+
+## Venta guiada desde un producto
+
+Después de buscar o escanear un artículo, abre su ficha y baja hasta **Preparar esta venta**. Revisa unidades y fecha del stock. Ingresa el precio unitario real, cantidad, canal y valor de la garantía. Selecciona el tipo de producto y los años para usar las tablas existentes. La garantía ingresada se suma una sola vez al total de la propuesta; no se multiplica automáticamente por cantidad.
+
+El panel calcula **precio unitario × cantidad + garantía** y la **comisión estimada de garantía**. No inventa comisión del producto ni consulta automáticamente precios o garantía en ABC. El informe no reserva unidades y no confirma disponibilidad online.
+
+**Preparar registro** lleva los valores al formulario editable. La propuesta temporal permanece solo en la sesión del navegador y vence a los 15 minutos. Si hay un borrador anterior, puedes continuarlo o elegir expresamente la propuesta nueva. El folio y la fecha deben revisarse antes de **Confirmar Venta**. El PLU y nombre se muestran como referencia; todavía no se almacenan como detalle del artículo en la base de ventas.
