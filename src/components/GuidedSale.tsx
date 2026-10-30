@@ -8,10 +8,12 @@ import {
   GUIDED_SALE_MAX_AMOUNT,
   GUIDED_SALE_MAX_UNITS,
   buildGuidedSale,
+  guidedSaleAcknowledgementError,
   guidedSaleCommission,
   guidedSaleWarnings,
   parseGuidedPesos,
   parseGuidedQuantity,
+  requiresSingleUnitAcknowledgement,
   saveGuidedSaleHandoff,
   warrantyYearsFor,
   type GuidedSaleChannel,
@@ -39,6 +41,9 @@ export default function GuidedSale({ product, stockDate }: GuidedSaleProps) {
   const [warrantyValue, setWarrantyValue] = useState('');
   const [errors, setErrors] = useState<GuidedSaleErrors>({});
   const [storageError, setStorageError] = useState('');
+  const [singleUnitAcknowledged, setSingleUnitAcknowledged] = useState(false);
+  const [acknowledgementError, setAcknowledgementError] = useState('');
+  const needsSingleUnitAcknowledgement = requiresSingleUnitAcknowledgement(product.available);
 
   const warnings = useMemo(
     () => {
@@ -74,6 +79,12 @@ export default function GuidedSale({ product, stockDate }: GuidedSaleProps) {
   function prepareSale(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStorageError('');
+    const acknowledgementMessage = guidedSaleAcknowledgementError(product.available, singleUnitAcknowledged);
+    if (acknowledgementMessage) {
+      setAcknowledgementError(acknowledgementMessage);
+      return;
+    }
+    setAcknowledgementError('');
     const result = buildGuidedSale({
       product: { plu: product.plu, name: product.description },
       precio_producto: price,
@@ -109,6 +120,18 @@ export default function GuidedSale({ product, stockDate }: GuidedSaleProps) {
         </div>
       </div>
 
+      <ol aria-label="Etapas de la venta guiada" className="mt-4 grid grid-cols-3 gap-2 text-center text-xs font-medium">
+        <li className="rounded-lg border border-secondary/40 bg-secondary/10 px-2 py-2 text-secondary">1 · Stock revisado</li>
+        <li aria-current="step" className="rounded-lg border border-secondary bg-secondary px-2 py-2 text-on-secondary">2 · Datos de venta</li>
+        <li className="rounded-lg border border-surface-border bg-surface-base px-2 py-2 text-on-surface-variant">3 · Registro</li>
+      </ol>
+
+      <div className="mt-3 rounded-xl border border-surface-border bg-surface-base p-4">
+        <p className="text-sm text-on-surface-variant">Producto de esta venta</p>
+        <p className="mt-1 font-semibold text-on-surface break-words">{product.description}</p>
+        <p className="mt-1 text-xs text-on-surface-variant">PLU {product.plu}</p>
+      </div>
+
       <div className="mt-4 rounded-xl border border-surface-border bg-surface-base p-4">
         <p className="text-sm text-on-surface-variant">
           Stock del informe: <strong className="text-on-surface tabular-nums">{product.available} unidades</strong>
@@ -125,6 +148,27 @@ export default function GuidedSale({ product, stockDate }: GuidedSaleProps) {
           </ul>
         )}
       </div>
+
+      {needsSingleUnitAcknowledgement && (
+        <div className="mt-3 rounded-xl border border-secondary/40 bg-secondary/5 p-4">
+          <label className="flex min-h-12 items-start gap-3 text-sm">
+            <input
+              type="checkbox"
+              checked={singleUnitAcknowledged}
+              onChange={event => { setSingleUnitAcknowledged(event.target.checked); if (event.target.checked) setAcknowledgementError(''); }}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-secondary"
+              aria-describedby="guided-sale-single-help"
+            />
+            <span>
+              Revisé la única unidad del informe: confirmé su estado (sellada, en exhibición o devolución) antes de ofrecerla.
+            </span>
+          </label>
+          <p id="guided-sale-single-help" className="mt-2 text-xs text-on-surface-variant">
+            Esta confirmación es obligatoria para preparar el registro. No descuenta stock ni reserva el producto.
+          </p>
+          {acknowledgementError && <p role="alert" className="mt-2 text-sm text-error">{acknowledgementError}</p>}
+        </div>
+      )}
 
       <form onSubmit={prepareSale} className="mt-4 space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

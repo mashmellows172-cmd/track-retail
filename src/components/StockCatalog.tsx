@@ -1,14 +1,20 @@
 'use client';
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import { Barcode, Camera, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ExternalLink, Package, Search, Upload, X, AlertTriangle, TrendingDown } from 'lucide-react';
-import { channelAdvice, findProduct, type StockProduct, type StockSnapshot } from '@/lib/stock';
+import { Barcode, Camera, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, ExternalLink, Package, Search, Upload, X, AlertTriangle, TrendingDown, GitCompare } from 'lucide-react';
+import { channelAdvice, findProduct, isStockFile, type StockProduct } from '@/lib/stock';
+import type { StockSnapshot } from '@/lib/stock';
+import { getOpportunityItems } from '@/lib/opportunities';
 import { loadStock, saveStock } from '@/lib/stockStorage';
 import ProductBarcodeScanner from './ProductBarcodeScanner';
 import ProductVisual from './ProductVisual';
 import GuidedSale from './GuidedSale';
+import ProductComparison from './ProductComparison';
+import ProductHistoryList from './ProductHistoryList';
+import ProductReferenceDetails from './ProductReferenceDetails';
 import {productGroup,productGroups,matchesProductGroup,type ProductGroup} from '@/lib/productPresentation';
 import {ProductGroupGlyph} from './ProductGlyph';
 import {chileDate} from '@/lib/validation';
+import type {AbcPriceInfo} from '@/lib/abcReference';
 
 const money = (n: number) => n.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 const field = 'min-h-12 w-full rounded-xl border border-surface-border bg-surface-base px-3 text-on-surface';
@@ -16,6 +22,11 @@ const button = 'min-h-12 inline-flex items-center justify-center gap-2 rounded-x
 const brands = ['AMERICAN TOURISTER','URSUS TROTTER','UNDER ARMOUR','SAMSUNG','MOTOROLA','XIAOMI','HISENSE','MADEMSA','SINDELEN','SKECHERS','BROTHER','THOMAS','AIROLITE','KENDAL','SIEGEN','JANOME','MIDEA','PHILIPS','ELECTROLUX','OSTER','FENSA','APPLE','HONOR','HUAWEI','LENOVO','ASUS','ACER','SONY','LG','HP','GAMA','CAIXUN','XTREM','HEAD','KAYSER'];
 function suggestedBrand(p: StockProduct) { return brands.find(b => (` ${p.description.toUpperCase()} `).includes(` ${b} `)) || ''; }
 const advice = { sala: 'Preferir sala', verificar: 'Confirmar estado · 1 unidad', consultar_web: 'Consultar alternativa online', incidencia: 'Stock negativo · revisar' };
+const quickViews = [
+  { id: 'price_drop', label: 'Bajaron de precio', icon: TrendingDown, caveat: 'Comparación con la carga anterior guardada en este navegador. No es una oferta online ni confirma el precio vigente. Si hay 1 unidad, confirma su estado antes de ofrecer.' },
+  { id: 'suitable_sala', label: 'Aptos para sala (≥2)', icon: Package, caveat: 'El informe muestra 2 o más unidades. Confirma estado y existencia antes de ofrecer; no reserva stock.' },
+  { id: 'confirm_single', label: 'Confirmar 1 unidad', icon: AlertTriangle, caveat: 'Solo hay 1 unidad en el informe. Se muestra para confirmar su estado; no se excluye automáticamente.' },
+] as const;
 
 export default function StockCatalog() {
   const [snapshot, setSnapshot] = useState<StockSnapshot | null>(null);
@@ -31,12 +42,15 @@ export default function StockCatalog() {
   const [availability, setAvailability] = useState('');
   const [sort, setSort] = useState('name');
   const [maxPrice, setMaxPrice] = useState('');
+  const [quickView, setQuickView] = useState<'' | 'price_drop' | 'suitable_sala' | 'confirm_single'>('');
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<StockProduct | null>(null);
   const [scanning, setScanning] = useState(false);
   const [photos,setPhotos] = useState<Record<string,string>>({});
   const [referenceMessage,setReferenceMessage] = useState<Record<string,string>>({});
   const [referenceBusy,setReferenceBusy] = useState('');
+  const [productReferences,setProductReferences]=useState<Record<string,{prices:AbcPriceInfo[];hasAmbiguousPrice:boolean;checkedAt?:string;image?:string|null;url?:string}>>({});
+  const [showComparison,setShowComparison] = useState(false);
   const worker = useRef<Worker | null>(null);
   const mounted = useRef(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -60,15 +74,42 @@ export default function StockCatalog() {
   const areas = useMemo(() => [...new Set(products?.map(p => p.area) || [])].sort((a,b) => Number(a)-Number(b)), [products]);
   const availableBrands = useMemo(() => [...new Set(products?.map(suggestedBrand).filter(Boolean) || [])].sort(), [products]);
   const stats = useMemo(() => ({ positive: products?.filter(p => p.available > 0).length || 0, single: products?.filter(p => p.available === 1).length || 0, reduced: products?.filter(p => p.previousPrice !== undefined && p.price < p.previousPrice).length || 0 }), [products]);
+  const opportunities = useMemo(() => getOpportunityItems(products || []), [products]);
+  const opportunityKinds = useMemo(() => {
+    const kinds = new Map<string, Set<string>>();
+    for (const item of opportunities) {
+      const set = kinds.get(item.product.plu) || new Set<string>();
+      set.add(item.kind);
+      kinds.set(item.product.plu, set);
+    }
+    return kinds;
+  }, [opportunities]);
+  const opportunityRank = useMemo(() => {
+    const rank = new Map<string, number>();
+    opportunities.forEach((item, index) => { if (!rank.has(item.product.plu)) rank.set(item.product.plu, index); });
+    return rank;
+  }, [opportunities]);
+  const quickCounts = useMemo(() => ({
+    price_drop: opportunities.filter(item => item.kind === 'price_drop').length,
+    suitable_sala: opportunities.filter(item => item.kind === 'suitable_sala').length,
+    confirm_single: opportunities.filter(item => item.kind === 'confirm_single').length,
+  }), [opportunities]);
   const filtered = useMemo(() => {
     const q = deferredQuery.trim().toLocaleUpperCase('es');
-    return (products || []).filter(p => matchesProductGroup(p,kind) && (!area || p.area === area) && (!brand || suggestedBrand(p) === brand) && (!availability || channelAdvice(p.available) === availability) && (!maxPrice || p.price <= Number(maxPrice)) && (!q || `${p.description} ${p.plu} ${p.barcodes.join(' ')} ${p.category}`.toLocaleUpperCase('es').includes(q)))
-      .sort((a,b) => sort === 'price' ? a.price-b.price : sort === 'discount' ? ((b.previousPrice ?? b.price)-b.price)-((a.previousPrice ?? a.price)-a.price) : a.description.localeCompare(b.description,'es'));
-  }, [products, deferredQuery, area, kind, brand, availability, maxPrice, sort]);
+    return (products || []).filter(p => matchesProductGroup(p,kind) && (!area || p.area === area) && (!brand || suggestedBrand(p) === brand) && (!availability || channelAdvice(p.available) === availability) && (!maxPrice || p.price <= Number(maxPrice)) && (!quickView || opportunityKinds.get(p.plu)?.has(quickView)) && (!q || `${p.description} ${p.plu} ${p.barcodes.join(' ')} ${p.category}`.toLocaleUpperCase('es').includes(q)))
+      .sort((a,b) => {
+        if (quickView) {
+          const rankA = opportunityRank.get(a.plu) ?? Number.MAX_SAFE_INTEGER;
+          const rankB = opportunityRank.get(b.plu) ?? Number.MAX_SAFE_INTEGER;
+          if (rankA !== rankB) return rankA - rankB;
+        }
+        return sort === 'price' ? a.price-b.price : sort === 'discount' ? ((b.previousPrice ?? b.price)-b.price)-((a.previousPrice ?? a.price)-a.price) : a.description.localeCompare(b.description,'es');
+      });
+  }, [products, deferredQuery, area, kind, brand, availability, maxPrice, sort, quickView, opportunityKinds, opportunityRank]);
   const pageCount = Math.max(1, Math.ceil(filtered.length/24));
   const currentPage = Math.min(page, pageCount-1);
   const onCode = useCallback((code: string) => {
-    setScanning(false); setQuery(code); setArea(''); setKind(''); setBrand(''); setAvailability(''); setMaxPrice(''); setPage(0);
+    setScanning(false); setQuery(code); setArea(''); setKind(''); setBrand(''); setAvailability(''); setMaxPrice(''); setPage(0); setQuickView('');
     const match = findProduct(snapshot?.products || [], code);
     if (match) { setSelected(match); setError(''); }
     else setError(`Código ${code}: sin coincidencia única en esta carga. Revisa el código o busca por nombre.`);
@@ -76,7 +117,7 @@ export default function StockCatalog() {
   async function importFile(file: File | undefined) {
     if (!file) return;
     setError(''); setPreview(null);
-    if (!file.name.toLowerCase().endsWith('.xlsx') || file.size > 20*1024*1024) { setError('Selecciona un XLSX de hasta 20 MB.'); return; }
+    if (!isStockFile(file)) { setError('Selecciona un archivo XLSX o CSV de hasta 20 MB.'); return; }
     setBusy(true);
     try {
       const buffer = await file.arrayBuffer();
@@ -93,7 +134,7 @@ export default function StockCatalog() {
   async function confirmImport() {
     if (!preview) return;
     setBusy(true); setError('');
-    try { await saveStock(preview); setSnapshot(await loadStock()); setPreview(null); setPage(0); setQuery(''); setArea(''); setKind(''); setBrand(''); setAvailability(''); }
+    try { await saveStock(preview); setSnapshot(await loadStock()); setPreview(null); setPage(0); setQuery(''); setArea(''); setKind(''); setBrand(''); setAvailability(''); setQuickView(''); }
     catch(e) { setError(e instanceof Error ? e.message : 'No se guardó el stock.'); }
     finally { setBusy(false); }
   }
@@ -105,20 +146,38 @@ export default function StockCatalog() {
       const response=await fetch(`/api/product-reference?plu=${encodeURIComponent(plu)}`,{signal:controller.signal});
       const data=await response.json();
       if(!response.ok) throw new Error(data.error || 'No se pudo consultar la foto.');
-      if(mounted.current) { setPhotos(prev=>({...prev,[plu]:data.image})); setReferenceMessage(prev=>({...prev,[plu]:'Foto de referencia de ABC. Comprueba modelo y variante antes de vender.'})); }
+      if(mounted.current) {
+        setPhotos(prev=>({...prev,[plu]:data.image||null}));
+        setProductReferences(prev=>({...prev,[plu]:{prices:data.prices||[],hasAmbiguousPrice:!!data.hasAmbiguousPrice,checkedAt:data.checkedAt,url:data.url,image:data.image}}));
+        setReferenceMessage(prev=>({...prev,[plu]:'Foto de referencia de ABC. Comprueba modelo y variante antes de vender.'}));
+      }
     } catch(e) { if(!controller.signal.aborted && mounted.current) setReferenceMessage(prev=>({...prev,[plu]:e instanceof Error?e.message:'No se pudo consultar ABC.'})); }
     finally { if(!controller.signal.aborted && mounted.current) setReferenceBusy(''); }
   }
   return <div className="space-y-6 pb-6">
-    <header className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-sm text-secondary font-semibold mb-1">HERRAMIENTAS DE SALA</p><h1 className="text-3xl font-semibold tracking-tight">Catálogo y stock</h1><p className="mt-2 text-on-surface-variant max-w-xl">Encuentra el producto, confirma sus unidades y decide cómo ofrecerlo.</p></div><div className="flex flex-wrap gap-2"><button type="button" disabled={busy} onClick={() => fileInput.current?.click()} className={button}><Upload size={20} aria-hidden="true" />Cargar Excel</button><input ref={fileInput} type="file" accept=".xlsx" aria-label="Archivo de stock XLSX" className="sr-only" onChange={e => void importFile(e.target.files?.[0])} /></div></header>
+    <header className="flex flex-wrap items-start justify-between gap-4"><div><p className="text-sm text-secondary font-semibold mb-1">HERRAMIENTAS DE SALA</p><h1 className="text-3xl font-semibold tracking-tight">Catálogo y stock</h1><p className="mt-2 text-on-surface-variant max-w-xl">Encuentra el producto, confirma sus unidades y decide cómo ofrecerlo.</p></div><div className="flex flex-wrap gap-2"><button type="button" onClick={() => setShowComparison(true)} className={button} disabled={!snapshot || (snapshot.products?.length||0)===0}><GitCompare size={20} aria-hidden="true" />Comparar productos</button><button type="button" disabled={busy} onClick={() => fileInput.current?.click()} className={button}><Upload size={20} aria-hidden="true" />Cargar archivo</button><input ref={fileInput} type="file" accept=".xlsx,.csv" aria-label="Archivo de stock XLSX o CSV" className="sr-only" onChange={e => void importFile(e.target.files?.[0])} /></div></header>
     <p className="text-sm text-on-surface-variant">Stock guardado solo en este navegador. No se envía el archivo ni el costo interno a un servidor.</p>
     {error && <div role="alert" className="rounded-xl border border-error/40 bg-error/10 p-4 flex gap-3"><AlertTriangle className="shrink-0" aria-hidden="true" /><p>{error}</p></div>}
     {busy && <p role="status" className="rounded-xl border border-surface-border p-4 animate-pulse">Procesando stock… Puedes seguir usando el resto de la aplicación.</p>}
     {preview && <section aria-labelledby="preview-title" className="rounded-3xl border border-secondary/40 bg-secondary/5 p-5 space-y-4"><h2 id="preview-title" className="text-xl font-semibold">Revisar carga antes de guardar</h2>{preview.warnings?.map(warning => <p key={warning} role="status" className="rounded-xl bg-surface-base p-3 text-sm">{warning}</p>)}<p>{preview.store || 'Tienda sin identificar'} · {preview.date} · {preview.products.length.toLocaleString('es-CL')} productos únicos</p><p className="text-sm text-on-surface-variant">{preview.products.filter(p => p.available < 0).length.toLocaleString('es-CL')} productos con stock negativo. Los códigos alternativos se agruparon sin sumar existencias.</p>{snapshot && <p className="text-sm">Sustituirá la vista actual del {snapshot.date}. Se conserva la carga previa para comparar precios. La fecha debe ser igual o posterior y la tienda debe coincidir.</p>}<div className="flex flex-wrap gap-3"><button disabled={busy} onClick={() => void confirmImport()} className={`${button} bg-secondary/15 text-secondary`}>Guardar este stock</button><button disabled={busy} onClick={() => setPreview(null)} className={button}>Cancelar</button></div></section>}
-    {!snapshot && !busy && !preview && <section className="rounded-3xl border border-dashed border-surface-border p-8 text-center"><Package size={48} aria-hidden="true" className="mx-auto text-secondary mb-4" /><h2 className="text-xl font-semibold mb-2">Tu sala de ventas, en una búsqueda</h2><p className="text-on-surface-variant max-w-lg mx-auto">Carga el informe XLSX original. No necesitas ordenar columnas ni quitar encabezados. Después podrás buscar por nombre, PLU o código de barras.</p><button onClick={() => fileInput.current?.click()} className={`${button} mt-6`}>Elegir archivo de stock</button></section>}
+    {!snapshot && !busy && !preview && <section className="rounded-3xl border border-dashed border-surface-border p-8 text-center"><Package size={48} aria-hidden="true" className="mx-auto text-secondary mb-4" /><h2 className="text-xl font-semibold mb-2">Tu sala de ventas, en una búsqueda</h2><p className="text-on-surface-variant max-w-lg mx-auto">Carga el informe XLSX o CSV original. No necesitas ordenar columnas ni quitar encabezados. Después podrás buscar por nombre, PLU o código de barras.</p><button onClick={() => fileInput.current?.click()} className={`${button} mt-6`}>Elegir archivo de stock</button></section>}
     {snapshot && <>
       {snapshot.warnings?.map(warning=><p key={warning} role="status" className="rounded-2xl border border-surface-border bg-surface-elevated p-4 text-sm">{warning}</p>)}
       {snapshot.date !== chileDate() && <p role="status" className="rounded-2xl border border-secondary/30 bg-secondary/5 p-4 text-sm"><strong>Este stock no corresponde a hoy.</strong> El informe es del {snapshot.date}. Carga el archivo del día o confirma las unidades antes de ofrecerlas.</p>}
+      <section aria-labelledby="opportunities-title" className="rounded-3xl border border-surface-border bg-surface-elevated p-5 space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 id="opportunities-title" className="text-xl font-semibold">Oportunidades del informe</h2>
+            <p className="mt-1 text-sm text-on-surface-variant">Vistas rápidas según el informe del <strong className="text-on-surface">{snapshot.date}</strong>. No confirman existencia online; revisa cada producto.</p>
+          </div>
+          <p className="text-xs text-on-surface-variant">Datos locales del archivo cargado</p>
+        </div>
+        <div role="group" aria-label="Vistas rápidas de oportunidades" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
+          <button type="button" aria-pressed={quickView === ''} onClick={() => { setQuickView(''); setPage(0); }} className={`min-h-12 rounded-xl border px-4 py-2 text-sm font-medium transition-colors ${quickView === '' ? 'border-secondary bg-secondary text-on-secondary' : 'border-surface-border bg-surface-base text-on-surface hover:border-secondary/60'}`}>Todos los productos</button>
+          {quickViews.map(({ id, label, icon: Glyph }) => <button type="button" key={id} aria-pressed={quickView === id} onClick={() => { setQuickView(id); setPage(0); }} className={`min-h-12 rounded-xl border px-4 py-2 text-sm font-medium transition-colors inline-flex items-center justify-center gap-2 ${quickView === id ? 'border-secondary bg-secondary text-on-secondary' : 'border-surface-border bg-surface-base text-on-surface hover:border-secondary/60'}`}><Glyph size={18} aria-hidden="true" />{label}<span className="tabular-nums opacity-80">({quickCounts[id]})</span></button>)}
+        </div>
+        {quickView && <p role="status" className="rounded-xl bg-surface-base p-3 text-sm text-on-surface-variant">{quickViews.find(view => view.id === quickView)?.caveat} Resultados: {filtered.length.toLocaleString('es-CL')}.</p>}
+      </section>
       <section aria-labelledby="sales-assistant-title" className="rounded-3xl border border-secondary/40 bg-secondary/5 p-5 sm:p-6 flex flex-col lg:flex-row lg:items-center gap-5">
         <div className="flex-1"><p className="text-xs tracking-wider text-secondary font-semibold mb-2">VENTA EN SALA</p><h2 id="sales-assistant-title" className="text-2xl font-semibold">Asistente de venta</h2><p className="mt-2 text-on-surface-variant">Escanea un artículo y consulta sus unidades, precio y referencia en ABC.</p></div>
         <button type="button" disabled={busy} onClick={() => setScanning(true)} className="w-full lg:w-auto lg:min-w-72 min-h-20 rounded-3xl bg-secondary text-on-secondary px-5 py-4 flex items-center justify-center gap-4 font-semibold text-lg hover:opacity-90 transition-opacity disabled:opacity-40"><Camera size={32} className="shrink-0" aria-hidden="true" /><span className="text-left">Escanear producto<span className="block text-sm font-normal">para vender</span></span></button>
@@ -137,7 +196,12 @@ export default function StockCatalog() {
       {!filtered.length && <p className="text-center p-8 text-on-surface-variant">Sin coincidencias. Prueba otro nombre o cambia los filtros.</p>}
       <nav aria-label="Páginas del catálogo" className="flex items-center justify-center gap-4"><button className={button} disabled={currentPage===0} onClick={() => setPage(currentPage-1)}><ChevronLeft size={18} aria-hidden="true" />Anterior</button><span className="text-sm">{currentPage+1} / {pageCount}</span><button className={button} disabled={currentPage===pageCount-1} onClick={() => setPage(currentPage+1)}>Siguiente<ChevronRight size={18} aria-hidden="true" /></button></nav>
     </>}
-    {selected && <dialog ref={detail} onCancel={() => setSelected(null)} className="m-auto w-[calc(100%-2rem)] max-w-xl max-h-[85dvh] overflow-y-auto rounded-3xl border border-surface-border bg-surface-elevated p-5 text-on-surface backdrop:bg-black/70" aria-labelledby="product-title"><div className="flex justify-between items-start gap-3"><h2 id="product-title" className="text-xl font-semibold break-words">{selected.description}</h2><button type="button" className={`${button} shrink-0 px-3`} aria-label="Cerrar ficha" onClick={() => setSelected(null)}><X aria-hidden="true" /></button></div><ProductVisual key={`${selected.plu}-${photos[selected.plu] || "icon"}`} product={selected} image={photos[selected.plu]} large /><p className="mt-2 text-sm text-on-surface-variant">PLU {selected.plu} · {selected.category}</p><dl className="grid grid-cols-2 gap-4 my-6">{[['Disponibles',selected.available],['Existencia física',selected.existence ?? 'No incluida en el archivo'],['Precio del listado',selected.price ? money(selected.price) : 'Sin confirmar'],['Marca orientativa',suggestedBrand(selected) || 'Por confirmar'],['Área',selected.area],['Fecha del stock',snapshot?.date]].map(([label,value]) => <div key={label}><dt className="text-sm text-on-surface-variant">{label}</dt><dd className="font-semibold mt-1">{value}</dd></div>)}</dl><p className="rounded-xl bg-surface-base p-4 mb-4">{advice[channelAdvice(selected.available)]}. {selected.available === 1 ? 'Confirma si está sellado, en exhibición o corresponde a una devolución.' : 'Confirma las unidades y su estado antes de ofrecerlo.'}</p><p className="text-sm text-on-surface-variant mb-4">Referencia basada en la descripción del Excel. Características completas, precio web, precio con tarjeta y garantía: pendientes de verificar en ABC. La existencia online es independiente.</p><button type="button" disabled={referenceBusy === selected.plu} onClick={() => void loadReference(selected.plu)} className={`${button} w-full mb-3`}>{referenceBusy === selected.plu ? "Consultando ABC…" : "Obtener foto de referencia de ABC"}</button>{referenceMessage[selected.plu] && <p role="status" className="text-sm text-on-surface-variant mb-3">{referenceMessage[selected.plu]}</p>}<a href={`https://www.abc.cl/${encodeURIComponent(selected.plu)}.html`} target="_blank" rel="noopener noreferrer" className={`${button} w-full text-secondary`}><ExternalLink size={18} aria-hidden="true" />Consultar ficha en ABC</a><p className="text-xs text-on-surface-variant mt-3">Enlace construido con el PLU del informe; puede no existir una ficha online. Códigos: {selected.barcodes.join(', ')}</p><GuidedSale product={selected} stockDate={snapshot?.date} /></dialog>}
+    {selected && <dialog ref={detail} onCancel={() => setSelected(null)} className="m-auto w-[calc(100%-2rem)] max-w-xl max-h-[85dvh] overflow-y-auto rounded-3xl border border-surface-border bg-surface-elevated p-5 text-on-surface backdrop:bg-black/70" aria-labelledby="product-title"><div className="flex justify-between items-start gap-3"><h2 id="product-title" className="text-xl font-semibold break-words">{selected.description}</h2><button type="button" className={`${button} shrink-0 px-3`} aria-label="Cerrar ficha" onClick={() => setSelected(null)}><X aria-hidden="true" /></button></div><ProductVisual key={`${selected.plu}-${photos[selected.plu] || "icon"}`} product={selected} image={photos[selected.plu]} large /><p className="mt-2 text-sm text-on-surface-variant">PLU {selected.plu} · {selected.category}</p><dl className="grid grid-cols-2 gap-4 my-6">{[['Disponibles',selected.available],['Existencia física',selected.existence ?? 'No incluida en el archivo'],['Precio del listado',selected.price ? money(selected.price) : 'Sin confirmar'],['Marca orientativa',suggestedBrand(selected) || 'Por confirmar'],['Área',selected.area],['Fecha del stock',snapshot?.date]].map(([label,value]) => <div key={label}><dt className="text-sm text-on-surface-variant">{label}</dt><dd className="font-semibold mt-1">{value}</dd></div>)}</dl><p className="rounded-xl bg-surface-base p-4 mb-4">{advice[channelAdvice(selected.available)]}. {selected.available === 1 ? 'Confirma si está sellado, en exhibición o corresponde a una devolución.' : 'Confirma las unidades y su estado antes de ofrecerlo.'}</p><p className="text-sm text-on-surface-variant mb-4">Referencia basada en la descripción del Excel. Características completas, precio web, precio con tarjeta y garantía: se muestran solo si son verificados y sin ambigüedad. La existencia online es independiente.</p><button type="button" disabled={referenceBusy === selected.plu} onClick={() => void loadReference(selected.plu)} className={`${button} w-full mb-3`}>{referenceBusy === selected.plu ? "Consultando ABC…" : "Consultar referencia ABC"}</button>{referenceMessage[selected.plu] && <p role="status" className="text-sm text-on-surface-variant mb-3">{referenceMessage[selected.plu]}</p>}<a href={`https://www.abc.cl/${encodeURIComponent(selected.plu)}.html`} target="_blank" rel="noopener noreferrer" className={`${button} w-full text-secondary`}><ExternalLink size={18} aria-hidden="true" />Consultar ficha en ABC</a><p className="text-xs text-on-surface-variant mt-3">Enlace construido con el PLU del informe; puede no existir una ficha online. Códigos: {selected.barcodes.join(', ')}</p>
+          <ProductReferenceDetails reportPrice={selected.price} reference={productReferences[selected.plu]} />
+          <ProductReferenceDetails reportPrice={selected.price} reference={productReferences[selected.plu]} />
+          <ProductHistoryList key={selected.plu} plu={selected.plu} />
+          <GuidedSale key={selected.plu} product={selected} stockDate={snapshot?.date} /></dialog>}
+    {showComparison && snapshot && <ProductComparison products={snapshot.products} reportDate={snapshot.date} onClose={() => setShowComparison(false)} />}
     {scanning && <ProductBarcodeScanner onCode={onCode} onClose={() => setScanning(false)} />}
   </div>;
 }

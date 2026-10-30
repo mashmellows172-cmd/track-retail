@@ -18,6 +18,8 @@ Para facilitar la lectura, fotografía la boleta completa, con buena luz y sin r
 
 Presta atención al folio, la fecha, el precio del producto, el valor de la garantía y el total de la boleta. Selecciona el canal de venta, el tipo de producto y los años de garantía. Si corresponde a una venta por internet, revisa también el número de pedido.
 
+Antes de guardar, la aplicación revisa si el mismo folio y la misma fecha ya aparecen en tu cola pendiente o en el historial del mes. La revisión no considera el canal: si existe una coincidencia, muestra los datos encontrados y no guarda automáticamente. Revisa la boleta; si es una venta distinta, usa **Registrar de todos modos**. La validación final sigue siendo del servidor. Si no hay conexión o la revisión no se puede completar, el formulario lo indica y puedes continuar sin perder el registro pendiente.
+
 ## 3. Revisa tu rendimiento
 
 El **Panel de Control** reúne las comisiones del mes, las garantías registradas, la distribución por canal y la actividad reciente. Puedes ajustar una meta mensual y usar el simulador para explorar escenarios.
@@ -32,7 +34,7 @@ Si no ves una venta, comprueba el nombre seleccionado, el período y la conexió
 
 ## 5. Carga stock y consulta productos
 
-En **Catálogo**, pulsa **Cargar Excel** y selecciona el informe XLSX original de existencias. Revisa tienda, fecha y cantidad de productos antes de guardar. Los encabezados repetidos, códigos alternativos y filas repartidas entre celdas se procesan automáticamente. Los PLU repetidos no suman unidades.
+En **Catálogo**, pulsa **Cargar archivo** y selecciona el informe de existencias original en XLSX o CSV. Revisa tienda, fecha y cantidad de productos antes de guardar. Los encabezados repetidos, códigos alternativos y filas repartidas entre celdas se procesan automáticamente. Los PLU repetidos no suman unidades.
 
 También se admiten informes separados en columnas. Si el archivo no trae Existencia física, ese dato aparece como no incluido; Disponible sigue siendo la cantidad usada. Los códigos alternativos sin PLU asociado se omiten con una advertencia, porque no se puede saber a qué producto corresponden. Los códigos internos se muestran con 13 dígitos, como `0200012345678`; la búsqueda acepta también `200012345678`. El PLU y el dígito final del código original no se modifican.
 
@@ -52,6 +54,14 @@ En **Inicio**, configura el monto por apertura y el **total** por apertura y act
 
 Cada registro conserva las tarifas aplicadas aunque cambies los importes para tarjetas posteriores. El resumen y la exportación de tarjetas se filtran por mes. Los registros son locales al nombre y navegador activos; exporta el Excel para respaldarlos. No ingreses nombres, números de tarjeta ni datos de clientes.
 
+## 7. Respalda los datos de este navegador
+
+Abre **Respaldo local** con tu nombre configurado. Puedes descargar un archivo JSON con tus tarjetas, las preferencias permitidas, el borrador actual y tus ventas pendientes como referencia de recuperación. Revisa el resumen antes de descargar y guarda el archivo en un lugar seguro.
+
+Para restaurar, elige el archivo y revisa la vista previa antes de confirmar. Se restauran solo las tarjetas que no existían; tus preferencias y cualquier borrador actual no se reemplazan. Las ventas pendientes del archivo **no** se agregan a la cola activa ni se envían solo. La restauración necesita un navegador con bloqueos entre ventanas y se detiene sin escribir si detecta un archivo inválido o un cambio de vendedor.
+
+El respaldo local no incluye el historial del servidor: usa **Exportar Excel** en Historial. Tampoco incluye el stock: vuelve a cargar el archivo XLSX o CSV original en Catálogo. Consulta la [guía de respaldo](RESPALDO.md) para el detalle y los límites.
+
 ## Si falla la conexión
 
 La aplicación intenta conservar las ventas pendientes en el navegador del dispositivo para reintentarlas posteriormente. No borres sus datos hasta comprobar que las boletas aparecen en el historial.
@@ -66,7 +76,7 @@ La cola local no sustituye una copia de seguridad y no garantiza que puedas abri
 
 **¿La lectura automática es definitiva?** No. Corrige cualquier error en el formulario antes de confirmar.
 
-**¿Qué hago si una boleta aparece como duplicada?** Busca su folio en el historial. No cambies el folio para eludir el aviso: podrías duplicar una venta.
+**¿Qué hago si una boleta aparece como duplicada?** La aplicación muestra una advertencia si el folio y la fecha coinciden con tu cola pendiente o con el historial del mes; el canal no influye en esa comparación. Revisa la boleta y busca el folio en el historial. Si es una venta distinta, puedes usar **Registrar de todos modos**. No cambies el folio solo para eludir el aviso: podrías duplicar una venta. El servidor mantiene la validación final.
 
 **¿Dónde informo un problema?** Abre un [reporte](https://github.com/mashmellows172-cmd/track-retail/issues/new/choose) con pasos para reproducirlo y datos ficticios. Evita adjuntar boletas con datos personales.
 

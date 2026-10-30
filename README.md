@@ -6,7 +6,7 @@
 
 Una aplicación web para registrar ventas de garantías, consultar tu rendimiento y organizar el trabajo diario en retail chileno. Dentro de la aplicación también encontrarás el nombre **BryanApp**.
 
-[**Abrir la aplicación**](https://pinwin-mu.vercel.app) · [Guía de uso](docs/GUIA_DE_USO.md) · [Instalación](docs/CONFIGURACION.md) · [Reportar un problema](https://github.com/mashmellows172-cmd/track-retail/issues/new/choose)
+[**Abrir la aplicación**](https://pinwin-mu.vercel.app) · [Guía de uso](docs/GUIA_DE_USO.md) · [Respaldo local](docs/RESPALDO.md) · [Instalación](docs/CONFIGURACION.md) · [Reportar un problema](https://github.com/mashmellows172-cmd/track-retail/issues/new/choose)
 
 > **Estado: en desarrollo.** Consulta el [PR #1](https://github.com/mashmellows172-cmd/track-retail/pull/1) para conocer el estado de las mejoras de funcionamiento, seguridad y adaptación a dispositivos. Una rama de GitHub y la aplicación desplegada pueden tener versiones distintas.
 
@@ -21,6 +21,7 @@ Una aplicación web para registrar ventas de garantías, consultar tu rendimient
 | Definir una meta | Seguir el avance de una meta mensual y explorar proyecciones. |
 | Revisar el historial | Filtrar las ventas por mes y año. |
 | Exportar a Excel | Descargar los registros del período para revisarlos fuera de la aplicación. |
+| Respaldar datos locales | Descargar y restaurar tarjetas, preferencias y borrador del navegador, sin enviar ventas. |
 
 ## Empieza a usarla
 
@@ -84,6 +85,8 @@ El código de las páginas está en [`src/app`](src/app), los componentes en [`s
 El nombre del vendedor se guarda en el navegador y permite seleccionar sus ventas. **No es una cuenta con contraseña ni garantiza privacidad entre vendedores.**
 
 La aplicación intenta conservar registros pendientes en el dispositivo cuando falla la conexión. No borres los datos del navegador hasta comprobar su sincronización en el historial. Esto no equivale a una copia de seguridad ni garantiza abrir toda la aplicación sin internet.
+
+En **Respaldo local** puedes descargar una copia versionada de las tarjetas, preferencias y borrador del vendedor activo. Las ventas pendientes se incluyen solo como referencia de recuperación: no se restauran ni se envían automáticamente. El historial del servidor se conserva aparte con **Exportar Excel** en Historial, y el stock se recupera cargando el archivo original (XLSX o CSV). Consulta la [guía de respaldo](docs/RESPALDO.md).
 
 Nunca publiques credenciales ni boletas con datos personales. Antes de usar datos privados en una instalación pública, revisa los controles de acceso y las políticas RLS de Supabase.
 

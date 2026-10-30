@@ -8,9 +8,11 @@ import GraficoDistribucion from '@/components/GraficoDistribucion';
 import SimuladorComisiones from '@/components/SimuladorComisiones';
 import { Venta } from '@/types/venta';
 import Link from 'next/link';
+import { ArchiveRestore } from 'lucide-react';
 import { useStoredString } from '@/hooks/useStoredString';
 import { chileDate } from '@/lib/validation';
 import CardCommissionsPanel from '@/components/CardCommissionsPanel';
+import CommissionSummary from '@/components/CommissionSummary';
 
 export default function DashboardPage() {
   const vendedor = useStoredString('trackretail_vendedor');
@@ -21,6 +23,7 @@ function SellerDashboard({ vendedor }: { vendedor: string | null }) {
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [serverDataAvailable, setServerDataAvailable] = useState(false);
 
   const currentMonth = chileDate().slice(0, 7);
 
@@ -35,7 +38,9 @@ function SellerDashboard({ vendedor }: { vendedor: string | null }) {
         throw new Error(errData.error || `Error ${res.status}`);
       }
       const data = await res.json();
-      setVentas(Array.isArray(data) ? data : []);
+      if (!Array.isArray(data)) throw new Error('La respuesta de ventas no tiene el formato esperado. Conservamos la última carga correcta.');
+      setVentas(data);
+      setServerDataAvailable(true);
       setError(null);
     } catch (err: unknown) {
       // AbortError es esperado al navegar — no es un error real
@@ -92,6 +97,19 @@ function SellerDashboard({ vendedor }: { vendedor: string | null }) {
         >
           Registrar mi primera boleta
         </Link>
+        <Link
+          href="/pruebas"
+          className="mt-3 inline-flex min-h-12 items-center gap-2 rounded-xl border border-surface-border px-5 py-3 text-sm text-on-surface-variant hover:bg-surface-base hover:text-on-surface transition-colors"
+        >
+          Pruebas de cámara
+        </Link>
+        <Link
+          href="/respaldo"
+          className="mt-3 inline-flex min-h-12 items-center gap-2 rounded-xl border border-surface-border px-5 py-3 text-sm text-on-surface-variant hover:bg-surface-base hover:text-on-surface transition-colors"
+        >
+          <ArchiveRestore size={18} aria-hidden="true" />
+          Respaldo local y recuperación
+        </Link>
       </div>
     );
   }
@@ -100,7 +118,7 @@ function SellerDashboard({ vendedor }: { vendedor: string | null }) {
 
   return (
     <>
-      <header className="flex justify-between items-end pb-8 border-b border-surface-border">
+      <header className="flex flex-wrap justify-between items-end gap-4 pb-8 border-b border-surface-border">
         <div>
           <h2 className="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-on-surface">
             Resumen General
@@ -108,6 +126,21 @@ function SellerDashboard({ vendedor }: { vendedor: string | null }) {
           <p className="font-body-lg text-body-lg text-on-surface-variant mt-2">
             Hola, <strong>{vendedor}</strong>. Aquí está tu rendimiento de este mes.
           </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/pruebas"
+            className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-surface-border px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-base hover:text-on-surface transition-colors"
+          >
+            Pruebas de cámara
+          </Link>
+          <Link
+            href="/respaldo"
+            className="inline-flex min-h-12 items-center gap-2 rounded-xl border border-surface-border px-4 py-2 text-sm text-on-surface-variant hover:bg-surface-base hover:text-on-surface transition-colors"
+          >
+            <ArchiveRestore size={18} aria-hidden="true" />
+            Respaldo local
+          </Link>
         </div>
       </header>
 
@@ -122,6 +155,13 @@ function SellerDashboard({ vendedor }: { vendedor: string | null }) {
         </div>
       )}
 
+      <CommissionSummary
+        vendedor={vendedor}
+        ventas={ventas}
+        month={currentMonth}
+        hasServerData={serverDataAvailable}
+        isStale={serverDataAvailable && Boolean(error)}
+      />
       <CardCommissionsPanel key={vendedor} vendedor={vendedor} />
       {(!error || ventas.length > 0) && <>
       <DashboardCards ventas={ventas} />

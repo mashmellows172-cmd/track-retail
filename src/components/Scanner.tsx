@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { VentaOCR } from '@/types/venta';
 import { Haptics } from '@/lib/haptics';
+import { captureOcrBaseline } from '@/lib/ocrCorrectionMetrics';
 import {
   prepareReceiptImage,
   prepareReceiptImageForOcr,
@@ -371,6 +372,11 @@ export default function Scanner({ onScanSuccess, onManualEntry }: ScannerProps) 
     if (!localOutcome?.hasUsefulData) return;
     const data = localOutcome.fields;
     setLocalOutcome(null);
+    try {
+      captureOcrBaseline(data);
+    } catch {
+      // ignore
+    }
     onScanSuccess(data);
   };
 

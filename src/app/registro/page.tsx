@@ -21,6 +21,7 @@ import {
   markSaleFormActive,
   type GuidedSaleHandoff,
 } from '@/lib/guidedSale';
+import { captureOcrBaseline, clearOcrBaseline } from '@/lib/ocrCorrectionMetrics';
 
 const money = (value: number) => value.toLocaleString('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
 const choiceButton = 'min-h-12 flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 font-label-md text-label-md transition-colors disabled:opacity-40';
@@ -167,7 +168,14 @@ export default function RegistroPage() {
   const [transitionError, setTransitionError] = useState('');
   const [dismissedAdoptionError, setDismissedAdoptionError] = useState(false);
 
-  useEffect(() => () => resetInitialSessionState(), []);
+  useEffect(() => () => {
+    resetInitialSessionState();
+    try {
+      clearOcrBaseline();
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const initialChoice: PendingChoice | null = !resolvedInitial && initial.handoff && initial.draft
     ? { handoff: initial.handoff, draft: initial.draft }
@@ -205,6 +213,12 @@ export default function RegistroPage() {
     setSuccessData(null);
     setTransitionError('');
     setDismissedAdoptionError(true);
+    // Capture new OCR baseline (replaces prior) - only explicitly reviewed OCR
+    try {
+      captureOcrBaseline(data);
+    } catch {
+      // ignore
+    }
     if (draft) {
       setPendingChoice({ handoff: null, draft, incoming: data });
       return;
@@ -216,6 +230,11 @@ export default function RegistroPage() {
   };
 
   const startBlankSale = () => {
+    try {
+      clearOcrBaseline();
+    } catch {
+      // ignore
+    }
     const initial = blankSale();
     const adoption = adoptSaleDraft(initial);
     setResolvedInitial(true);
@@ -229,6 +248,11 @@ export default function RegistroPage() {
   };
 
   const handleManualEntry = () => {
+    try {
+      clearOcrBaseline();
+    } catch {
+      // ignore
+    }
     setDismissedAdoptionError(true);
     const draft = readDraft();
     if (draft) {
@@ -250,6 +274,11 @@ export default function RegistroPage() {
 
   const continueDraft = () => {
     if (!displayedChoice) return;
+    try {
+      clearOcrBaseline();
+    } catch {
+      // ignore
+    }
     clearGuidedSaleHandoff();
     markSaleFormActive();
     setResolvedInitial(true);
@@ -266,6 +295,20 @@ export default function RegistroPage() {
     const handoff = displayedChoice.handoff;
     const incoming = displayedChoice.incoming;
     const initial = incoming ?? (handoff ? ocrFromHandoff(handoff) : blankSale());
+    // If using scanned incoming, keep OCR baseline (it was just captured). If using handoff/manual proposal, clear.
+    if (incoming) {
+      try {
+        captureOcrBaseline(incoming);
+      } catch {
+        // ignore
+      }
+    } else {
+      try {
+        clearOcrBaseline();
+      } catch {
+        // ignore
+      }
+    }
     // Persist first; adoptSaleDraft only consumes the handoff after a
     // successful write. On failure the old draft and proposal stay intact.
     const adoption = adoptSaleDraft(initial, undefined, undefined, handoff?.product ?? null);
@@ -309,6 +352,12 @@ export default function RegistroPage() {
       });
       clearGuidedSaleHandoff();
       clearSaleFormActive();
+      try {
+        // Ensure baseline cleared after successful record path handled in form
+        clearOcrBaseline();
+      } catch {
+        // ignore
+      }
       setResolvedInitial(true);
       setScannedData(null);
       setProductContext(null);
@@ -333,6 +382,11 @@ export default function RegistroPage() {
         });
         clearGuidedSaleHandoff();
         clearSaleFormActive();
+        try {
+          clearOcrBaseline();
+        } catch {
+          // ignore
+        }
         setResolvedInitial(true);
         setScannedData(null);
         setProductContext(null);
@@ -346,6 +400,11 @@ export default function RegistroPage() {
   };
 
   const handleCancel = () => {
+    try {
+      clearOcrBaseline();
+    } catch {
+      // ignore
+    }
     clearGuidedSaleHandoff();
     clearSaleFormActive();
     setResolvedInitial(true);

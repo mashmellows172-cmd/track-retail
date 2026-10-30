@@ -8,8 +8,10 @@ const {
   adoptSaleDraft,
   buildGuidedSale,
   clearGuidedSaleHandoff,
+  guidedSaleAcknowledgementError,
   guidedSaleCommission,
   guidedSaleWarnings,
+  requiresSingleUnitAcknowledgement,
   initialSaleDraft,
   isSaleFormActive,
   loadGuidedSaleHandoff,
@@ -132,6 +134,23 @@ test('stock warnings keep single units conditional and never promise web availab
 
   assert.equal(guidedSaleWarnings({ available: 4, listPrice: 59990 }).length, 0);
   assert.match(guidedSaleWarnings({ available: 1.5, listPrice: 59990 }).join(' '), /disponibilidad/i);
+});
+
+test('single-unit acknowledgement is required only for a valid one-unit report', () => {
+  assert.equal(requiresSingleUnitAcknowledgement(1), true);
+  for (const available of [0, -1, 2, 1.5, '1', null, undefined]) {
+    assert.equal(requiresSingleUnitAcknowledgement(available), false, `expected no acknowledgement for ${String(available)}`);
+  }
+});
+
+test('the acknowledgement blocks the handoff at submit until explicitly confirmed', () => {
+  const required = guidedSaleAcknowledgementError(1, false);
+  assert.match(required, /única unidad|confirm/i);
+  assert.equal(guidedSaleAcknowledgementError(1, true), null);
+  assert.equal(guidedSaleAcknowledgementError(2, false), null);
+  assert.equal(guidedSaleAcknowledgementError(0, false), null);
+  assert.equal(guidedSaleAcknowledgementError(-1, false), null);
+  assert.match(guidedSaleAcknowledgementError(1, 'yes'), /única unidad|confirm/i);
 });
 
 test('missing or zero list prices are flagged as unconfirmed', () => {

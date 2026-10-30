@@ -131,6 +131,18 @@ export function guidedSaleWarnings(input: { available?: unknown; listPrice?: unk
   return warnings;
 }
 
+/** Only a report with exactly one unit needs an explicit human review before handoff. */
+export function requiresSingleUnitAcknowledgement(available: unknown): boolean {
+  return typeof available === 'number' && Number.isSafeInteger(available) && available === 1;
+}
+
+/** Returns a blocking message when a single unit must be acknowledged, otherwise null. */
+export function guidedSaleAcknowledgementError(available: unknown, acknowledged: unknown): string | null {
+  if (!requiresSingleUnitAcknowledgement(available)) return null;
+  if (acknowledged === true) return null;
+  return 'Confirma que revisaste la única unidad del informe (estado, exhibición o devolución) antes de preparar el registro.';
+}
+
 function validateProduct(value: GuidedSaleInput['product']): GuidedSaleProduct | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const plu = typeof value.plu === 'string' ? value.plu.trim() : '';

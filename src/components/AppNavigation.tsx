@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ScanLine, Receipt, Package } from 'lucide-react';
+import { LayoutDashboard, ScanLine, Receipt, Package, ArchiveRestore } from 'lucide-react';
 
 const sections = [
   { href: '/', label: 'Inicio', icon: LayoutDashboard },
@@ -22,5 +22,17 @@ export default function AppNavigation({ mobile = false }: { mobile?: boolean }) 
         <span className={mobile ? 'text-xs' : 'text-sm'}>{label}</span>
       </Link>;
     })}
+    {!mobile && (
+      <>
+        <Link href="/pruebas" className="mt-2 flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-sm text-on-surface-variant transition-colors hover:bg-surface-base hover:text-on-surface">
+          <span className="w-[22px]" aria-hidden="true" />
+          <span className="text-sm">Pruebas</span>
+        </Link>
+        <Link href="/respaldo" className="flex min-h-12 items-center gap-3 rounded-xl border-t border-surface-border px-4 py-3 pt-5 text-sm text-on-surface-variant transition-colors hover:bg-surface-base hover:text-on-surface">
+          <ArchiveRestore size={22} aria-hidden="true" className="shrink-0" />
+          <span className="text-sm">Respaldo</span>
+        </Link>
+      </>
+    )}
   </nav>;
 }

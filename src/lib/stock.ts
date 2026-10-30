@@ -5,6 +5,14 @@ export interface StockProduct {
 export interface StockSnapshot {
   date: string; store: string; products: StockProduct[]; importedAt: string; source: string; warnings?: string[];
 }
+export function isStockFile(file: { name: string; size: number }) {
+  return /\.(xlsx|csv)$/i.test(file.name) && file.size <= 20 * 1024 * 1024;
+}
+export function decodeStockText(input: ArrayBuffer | Uint8Array) {
+  const bytes = input instanceof Uint8Array ? input : new Uint8Array(input);
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+  catch { return new TextDecoder('windows-1252').decode(bytes); }
+}
 export function stockQuantityWarning(available: number, quantity: number | null): string | null {
   return Number.isSafeInteger(available) && available > 0 && quantity !== null && Number.isSafeInteger(quantity) && quantity > available
     ? `Solicitas ${quantity} unidades y el informe indica ${available}. Confirma las unidades antes de ofrecer esta cantidad; no se reserva stock ni se confirma disponibilidad web.`
