@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabase } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase';
 import { Venta } from '@/types/venta';
 import { saleError, normalizeSale, monthRange } from '@/lib/validation';
 
@@ -15,7 +15,8 @@ export async function POST(req: NextRequest) {
     if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
     const data = normalizeSale(body as Venta);
 
-    const { data: insertedData, error } = await getSupabase()
+    const supabase = getSupabaseServer();
+    const { data: insertedData, error } = await supabase
       .from('ventas')
       .insert([{
         folio: data.folio,
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     if (error) {
       if (error.code === '23505') {
-        const { data: existing, error: lookupError } = await getSupabase().from('ventas').select(VENTAS_SELECT)
+        const { data: existing, error: lookupError } = await supabase.from('ventas').select(VENTAS_SELECT)
           .eq('folio', data.folio).eq('fecha_compra', data.fecha_compra).eq('canal', data.canal).single();
         if (!lookupError && existing) {
           const previous = normalizeSale(existing as Venta);
@@ -44,15 +45,26 @@ export async function POST(req: NextRequest) {
         }
         return NextResponse.json({ error: 'Esta boleta ya fue ingresada (folio duplicado)' }, { status: 409 });
       }
+
+      if (error.code === '42501') {
+        const rlsMsg =
+          "Bloqueo de seguridad RLS en Supabase (42501): La tabla 'ventas' tiene Row Level Security activo sin permisos de inserción para la clave actual. " +
+          "Ejecuta el script 'supabase_rls_fix.sql' en tu panel de Supabase SQL Editor para habilitar los permisos.";
+        console.error('❌ Supabase RLS Error:', error);
+        console.error('💡 Solución: Ejecuta supabase_rls_fix.sql en el dashboard de Supabase (SQL Editor).');
+        return NextResponse.json({ error: rlsMsg, code: 'RLS_POLICY_VIOLATION' }, { status: 403 });
+      }
+
       console.error('Supabase insert error:', error);
-      return NextResponse.json({ error: 'No se pudo guardar la venta. Intenta nuevamente.' }, { status: 500 });
+      return NextResponse.json({ error: error.message || 'No se pudo guardar la venta. Intenta nuevamente.' }, { status: 500 });
     }
 
     return NextResponse.json(insertedData);
 
   } catch (error: unknown) {
     console.error('Error en POST /api/ventas:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    const msg = error instanceof Error ? error.message : 'Error interno del servidor';
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
@@ -69,7 +81,8 @@ export async function GET(req: NextRequest) {
     const range = mes ? monthRange(mes) : null;
     if (mes !== null && !range) return NextResponse.json({ error: 'Mes inválido. Usa YYYY-MM.' }, { status: 400 });
 
-    let query = getSupabase()
+    const supabase = getSupabaseServer();
+    let query = supabase
       .from('ventas')
       .select(VENTAS_SELECT)
       .eq('vendedor_id', vendedor_id)
@@ -98,4 +111,3 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
-

@@ -366,6 +366,9 @@ export default function RegistroPage() {
       setTransitionError('');
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Error de red';
+      if (msg.includes('RLS') || msg.includes('42501') || msg.includes('Bloqueo') || msg.includes('folio duplicado')) {
+        throw error;
+      }
       // Detectar fallas de red o errores 500 del servidor
       if (error instanceof TypeError || !navigator.onLine || msg === 'SERVER_ERROR' || msg.toLowerCase().includes('network')) {
         try {

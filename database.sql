@@ -95,3 +95,27 @@ CREATE TRIGGER trigger_calcular_comision
 BEFORE INSERT OR UPDATE ON ventas
 FOR EACH ROW
 EXECUTE FUNCTION calcular_comision();
+
+-- 6. Políticas de Row Level Security (RLS) para permitir registro y consulta de ventas
+ALTER TABLE ventas ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Permitir inserts a anon y authenticated" ON ventas
+  FOR INSERT
+  TO anon, authenticated
+  WITH CHECK (true);
+
+CREATE POLICY "Permitir selects a anon y authenticated" ON ventas
+  FOR SELECT
+  TO anon, authenticated
+  USING (true);
+
+CREATE POLICY "Permitir updates a anon y authenticated" ON ventas
+  FOR UPDATE
+  TO anon, authenticated
+  USING (true)
+  WITH CHECK (true);
+
+CREATE POLICY "Permitir deletes a anon y authenticated" ON ventas
+  FOR DELETE
+  TO anon, authenticated
+  USING (true);
